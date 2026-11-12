@@ -1,0 +1,6 @@
+{
+  "name": "USEATIFY – ULIS Homies & Student Pass",
+  "description": "Hệ thống tra cứu chỗ ngồi thời gian thực, Thẻ sinh viên điện tử (Student Pass) và cấp mã vào cửa tạm thời tại 4 cơ sở Homies ULIS – ĐHQGHN.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

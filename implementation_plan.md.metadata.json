@@ -1,0 +1,6 @@
+{
+  "summary":  "Kế hoạch hoàn thiện USEATIFY vận hành thực tế: bổ sung điều kiện chỉ nhận Email sinh viên ULIS bắt đầu bằng 4 số 2X04 (X là số năm đăng ký) và đuôi @vnu.edu.vn, giữ quy trình đăng ký bằng ảnh thẻ chân dung + chọn cơ sở Homies đang đứng, mã ra vào hiệu lực 2 tiếng kèm cảnh báo liên cơ sở, khôi phục đánh giá & góp ý ẩn danh ở trang GUEST, và gỡ bỏ hộp kiểm thử tài khoản Staff.",
+  "updatedAt":  "2026-11-12T09:11:16.068783693Z",
+  "requestFeedback":  true,
+  "userFacing":  true
+}
