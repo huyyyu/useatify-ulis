@@ -3781,12 +3781,19 @@ function UseatifyMainApp() {
                     Số liệu được nhân viên trực tại từng cơ sở cập nhật trực tiếp và đồng bộ tức thời
                   </p>
                 </div>
-                <div className="flex items-center gap-3 text-xs text-slate-600">
-                  <span>≤60%: Còn nhiều chỗ</span>
-                  <span>·</span>
-                  <span>61–85%: Tương đối đông</span>
-                  <span>·</span>
-                  <span>&gt;85%: Gần kín / Hết chỗ</span>
+                <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span>≤60%: Còn nhiều chỗ</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                    <span>61–85%: Tương đối đông</span>
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                    <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
+                    <span>&gt;85%: Gần kín / Hết chỗ</span>
+                  </span>
                 </div>
               </div>
 
@@ -5357,17 +5364,17 @@ function UseatifyMainApp() {
                                     </span>
                                   </div>
 
-                                  <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                                  <div className="flex items-center justify-between gap-2 flex-nowrap text-xs text-slate-600">
                                     <span
-                                      className="inline-flex items-center gap-1.5 font-medium text-slate-600 min-w-0"
+                                      className="inline-flex items-center gap-1 font-medium text-slate-600 tracking-tight min-w-0"
                                       title={branch.address}
                                     >
                                       <MapPin className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
                                       <span className="truncate">{branch.address}</span>
                                     </span>
 
-                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] sm:text-xs font-medium whitespace-nowrap shrink-0">
-                                      <Clock className="w-3 h-3 text-slate-500 shrink-0" />
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-medium whitespace-nowrap shrink-0">
+                                      <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
                                       <span>
                                         Cập nhật:{' '}
                                         <strong className="text-slate-800 font-mono font-bold">
