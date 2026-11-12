@@ -3947,7 +3947,7 @@ function UseatifyMainApp() {
                         Đăng ký Thẻ Sinh Viên Số ULIS – ĐHQGHN (Tại quầy ra vào Homies)
                       </h2>
                       <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-                        Chỉ nhận Email sinh viên ULIS chọn cơ sở Homies bạn đang đứng và tải lên ảnh
+                        Chỉ nhận Email sinh viên ULIS, chọn cơ sở Homies bạn đang đứng và tải lên ảnh
                         cá nhân để nhân viên tại quầy đối chiếu và phê duyệt.
                       </p>
                     </div>
