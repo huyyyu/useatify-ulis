@@ -4106,7 +4106,7 @@ function UseatifyMainApp() {
 
                     <div className="space-y-1.5">
                       <label className="block text-xs font-bold text-slate-700">
-                        Nội dung trải nghiệm thực tế *
+                        Nội dung trải nghiệm thực tế <span className="text-rose-600">*</span>
                       </label>
                       <textarea
                         rows={3}
@@ -4321,7 +4321,7 @@ function UseatifyMainApp() {
 
                   <div className="space-y-1.5">
                     <label className="block text-xs font-bold text-slate-700">
-                      Nội dung góp ý chi tiết *
+                      Nội dung góp ý chi tiết <span className="text-rose-600">*</span>
                     </label>
                     <textarea
                       rows={3}
@@ -4506,20 +4506,22 @@ function UseatifyMainApp() {
 
                     <div className="space-y-1.5">
                       <label className="block text-xs font-bold text-slate-700">
-                        Email Sinh viên (2X04...@vnu.edu.vn)
+                        Email Sinh viên (@vnu.edu.vn) <span className="text-rose-600">*</span>
                       </label>
                       <input
                         type="email"
                         required
                         value={stuLoginEmail}
                         onChange={(e) => setStuLoginEmail(e.target.value)}
-                        placeholder="VD: 23040123@vnu.edu.vn"
+                        placeholder="Nhập email sinh viên"
                         className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="block text-xs font-bold text-slate-700">Mật khẩu</label>
+                      <label className="block text-xs font-bold text-slate-700">
+                        Mật khẩu <span className="text-rose-600">*</span>
+                      </label>
                       <input
                         type="password"
                         required
@@ -4578,21 +4580,21 @@ function UseatifyMainApp() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-slate-700">
-                          Họ và tên Sinh viên *
+                          Họ và tên Sinh viên <span className="text-rose-600">*</span>
                         </label>
                         <input
                           type="text"
                           required
                           value={stuRegFullName}
                           onChange={(e) => setStuRegFullName(e.target.value)}
-                          placeholder="VD: Trần Minh Ngọc"
+                          placeholder="Nhập họ và tên sinh viên"
                           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium"
                         />
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-slate-700">
-                          Email Sinh viên (4 số đầu 2X04 + @vnu.edu.vn) *
+                          Email Sinh viên (@vnu.edu.vn) <span className="text-rose-600">*</span>
                         </label>
                         <input
                           type="email"
@@ -4607,18 +4609,14 @@ function UseatifyMainApp() {
                               setStuRegBarcode(codeFromMail);
                             }
                           }}
-                          placeholder="VD: 23040123@vnu.edu.vn"
+                          placeholder="Nhập email sinh viên"
                           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium"
                         />
-                        <p className="text-[11px] text-slate-500">
-                          Bắt buộc bắt đầu bằng <strong className="font-mono">2X04</strong> (X là số
-                          năm đăng ký, VD: 2204, 2304, 2404, 2504...)
-                        </p>
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-slate-700">
-                          Mã số sinh viên (MÃ SV: 2X04...) *
+                          Mã số sinh viên <span className="text-rose-600">*</span>
                         </label>
                         <input
                           type="text"
@@ -4628,14 +4626,15 @@ function UseatifyMainApp() {
                             setStuRegCode(e.target.value);
                             setStuRegBarcode(e.target.value.trim());
                           }}
-                          placeholder="VD: 23040123"
+                          placeholder="Nhập mã số sinh viên"
                           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono font-bold"
                         />
                       </div>
 
                       <div className="space-y-1.5">
                         <label className="block text-xs font-bold text-slate-700">
-                          Mật khẩu tài khoản (Tối thiểu 6 ký tự) *
+                          Mật khẩu tài khoản (Tối thiểu 6 ký tự){' '}
+                          <span className="text-rose-600">*</span>
                         </label>
                         <input
                           type="password"
@@ -4651,7 +4650,8 @@ function UseatifyMainApp() {
                     {/* SELECT WHICH HOMIES BRANCH THE STUDENT IS CURRENTLY AT */}
                     <div className="space-y-2 pt-1">
                       <label className="block text-xs sm:text-sm font-extrabold text-slate-800">
-                        Bạn đang ở Homies nào? (Chọn cơ sở đang đứng để Staff tại quầy duyệt tài khoản) *
+                        Bạn đang ở Homies nào? (Chọn cơ sở đang đứng để Staff tại quầy duyệt tài khoản){' '}
+                        <span className="text-rose-600">*</span>
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         {branchesList.map((b) => {
@@ -4688,7 +4688,7 @@ function UseatifyMainApp() {
                     <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
                       <div className="flex items-center justify-between">
                         <span className="text-xs sm:text-sm font-extrabold text-slate-900">
-                          Ảnh thẻ chân dung sinh viên *
+                          Ảnh thẻ chân dung sinh viên <span className="text-rose-600">*</span>
                         </span>
                         <span className="text-[11px] font-mono text-emerald-700 font-semibold">
                           Chỉ cần ảnh thẻ chân dung • JPEG &lt; 60KB
