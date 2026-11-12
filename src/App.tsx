@@ -33,37 +33,25 @@ import {
   Star,
   Camera,
   Lightbulb,
-  CheckCheck,
   Trash2,
-  KeyRound,
   Crown,
-  Send,
   SlidersHorizontal,
-  Inbox,
   Search,
   MessageCircle,
   Phone,
-  Mail,
-  Save,
   Image as ImageIcon,
   ChevronUp,
   ChevronDown,
-  MessageSquareHeart,
   IdCard,
-  ScanBarcode,
   UserPlus,
   Timer,
   Ticket,
-  ShieldAlert,
-  CalendarClock,
-  Fingerprint,
   Upload,
   SwitchCamera
 } from 'lucide-react';
 
 declare global {
   interface Window {
-    BarcodeDetector?: any;
     __app_id?: string;
     __firebase_config?: any;
     __initial_auth_token?: string;
@@ -314,7 +302,7 @@ const WHY_CHOOSE_ITEMS = [
     title: 'Đánh giá và góp ý',
     shortDesc: 'Đóng góp ý kiến về cơ sở vật chất và tình trạng Homies.',
     detailDesc:
-      'Cho phép sinh viên đánh giá trên thang 5 sao kèm ảnh thực tế và gửi góp ý ẩn danh về cơ sở vật chất, tình trạng tại Homies, góp phần cải thiện trải nghiệm sử dụng không gian học tập.'
+      'Cho phép sinh viên đánh giá 5 sao kèm ảnh thực tế và gửi góp ý ẩn danh về cơ sở vật chất, tình trạng tại Homies, góp phần cải thiện trải nghiệm sử dụng không gian học tập.'
   }
 ];
 
@@ -337,22 +325,6 @@ function getCurrentDateTimeStr() {
   return `${hhmm} • ${dd}/${mm}/${yyyy}`;
 }
 
-function formatDateFromMs(ms?: number | null) {
-  if (!ms) return '';
-  const d = new Date(ms);
-  const dd = String(d.getDate()).padStart(2, '0');
-  const mm = String(d.getMonth() + 1).padStart(2, '0');
-  const yyyy = d.getFullYear();
-  return `${dd}/${mm}/${yyyy}`;
-}
-
-function formatRemainingDays(expiresAtMs?: number | null, nowMs = Date.now()) {
-  if (!expiresAtMs) return 'Đang hoạt động';
-  const diff = expiresAtMs - nowMs;
-  if (diff <= 0) return 'Đã hết hạn';
-  const days = Math.ceil(diff / (24 * 60 * 60 * 1000));
-  return `Còn ${days} ngày`;
-}
 
 function formatCountdownMMSS(expiresAtMs?: number | null, nowMs = Date.now()) {
   if (!expiresAtMs) return '00:00:00';
@@ -580,223 +552,6 @@ function resizeImageToDataURL(
   });
 }
 
-// Extract & sharpen the exact barcode region from the ULIS Student ID card without altering bar details
-function extractAndSharpenOriginalBarcode(
-  img: HTMLImageElement,
-  detectedBox?: { x: number; y: number; width: number; height: number } | null
-): {
-  barcodeImageDataUrl: string;
-  transitions: number;
-  contrastScore: number;
-  hasGreenHeader: boolean;
-} {
-  const natW = img.naturalWidth || img.width || 640;
-  const natH = img.naturalHeight || img.height || 400;
-
-  const workCanvas = document.createElement('canvas');
-  const w = Math.min(800, Math.max(360, natW));
-  const h = Math.min(520, Math.max(230, Math.round((natH / natW) * w)));
-  workCanvas.width = w;
-  workCanvas.height = h;
-  const ctx = workCanvas.getContext('2d');
-  if (!ctx) {
-    return { barcodeImageDataUrl: '', transitions: 0, contrastScore: 0, hasGreenHeader: false };
-  }
-  ctx.drawImage(img, 0, 0, w, h);
-
-  // Check if top band has ULIS green header characteristic (like image_f0b334ed.png)
-  let greenPixels = 0;
-  let topSamples = 0;
-  try {
-    const topData = ctx.getImageData(0, 0, w, Math.max(10, Math.floor(h * 0.22))).data;
-    for (let i = 0; i < topData.length; i += 24) {
-      const r = topData[i];
-      const g = topData[i + 1];
-      const b = topData[i + 2];
-      topSamples++;
-      if (g > r + 15 && g > b + 10 && g > 60) greenPixels++;
-    }
-  } catch {}
-  const hasGreenHeader = topSamples > 0 && greenPixels / topSamples > 0.12;
-
-  // Candidate regions:
-  // 1. Native BarcodeDetector boundingBox if detected
-  // 2. ULIS Student Card bottom-right barcode zone (below portrait & "MÃ SV: 2X04XXXX", x: 64%-97%, y: 78%-94%)
-  // 3. Full lower barcode band (x: 10%-95%, y: 65%-95%)
-  const candidateRects = [];
-  if (detectedBox && detectedBox.width > 20 && detectedBox.height > 10) {
-    const scaleX = w / natW;
-    const scaleY = h / natH;
-    candidateRects.push({
-      x: Math.max(0, Math.floor(detectedBox.x * scaleX - 8)),
-      y: Math.max(0, Math.floor(detectedBox.y * scaleY - 4)),
-      rw: Math.min(w, Math.ceil(detectedBox.width * scaleX + 16)),
-      rh: Math.min(h, Math.ceil(detectedBox.height * scaleY + 8))
-    });
-  }
-  // ULIS template exact barcode region (bottom right under MÃ SV)
-  candidateRects.push({
-    x: Math.floor(w * 0.65),
-    y: Math.floor(h * 0.79),
-    rw: Math.floor(w * 0.32),
-    rh: Math.floor(h * 0.15)
-  });
-  // Secondary wider bottom region in case user cropped closer to the barcode
-  candidateRects.push({
-    x: Math.floor(w * 0.12),
-    y: Math.floor(h * 0.7),
-    rw: Math.floor(w * 0.84),
-    rh: Math.floor(h * 0.24)
-  });
-
-  let bestRect = candidateRects[0];
-  let bestTransitions = 0;
-  let bestContrast = 0;
-
-  for (const rect of candidateRects) {
-    const sx = Math.max(0, Math.min(w - 20, rect.x));
-    const sy = Math.max(0, Math.min(h - 15, rect.y));
-    const sw = Math.max(20, Math.min(w - sx, rect.rw));
-    const sh = Math.max(15, Math.min(h - sy, rect.rh));
-
-    try {
-      const data = ctx.getImageData(sx, sy, sw, sh).data;
-      let minLum = 255;
-      let maxLum = 0;
-      let rowTransitionsTotal = 0;
-      const sampleRows = 5;
-
-      for (let rIdx = 1; rIdx <= sampleRows; rIdx++) {
-        const yRow = Math.floor((sh * rIdx) / (sampleRows + 1));
-        let prevL = 128;
-        let rowTrans = 0;
-        for (let xCol = 0; xCol < sw; xCol++) {
-          const idx = (yRow * sw + xCol) * 4;
-          const lum = 0.299 * data[idx] + 0.587 * data[idx + 1] + 0.114 * data[idx + 2];
-          if (lum < minLum) minLum = lum;
-          if (lum > maxLum) maxLum = lum;
-          if (xCol > 0 && Math.abs(lum - prevL) > 26) {
-            rowTrans++;
-          }
-          prevL = lum;
-        }
-        rowTransitionsTotal += rowTrans;
-      }
-
-      const avgTransitions = Math.round(rowTransitionsTotal / sampleRows);
-      const contrast = Math.round(maxLum - minLum);
-      if (avgTransitions * contrast > bestTransitions * bestContrast) {
-        bestTransitions = avgTransitions;
-        bestContrast = contrast;
-        bestRect = { x: sx, y: sy, rw: sw, rh: sh };
-      }
-    } catch {}
-  }
-
-  // Now crop bestRect and sharpen strictly vertically (1D column-locked contrast enhancement)
-  // This preserves 100% of every bar's horizontal width and spacing while making bars crisp & scannable
-  const outW = Math.max(280, Math.min(520, bestRect.rw * 2));
-  const outH = 96;
-  const outCanvas = document.createElement('canvas');
-  outCanvas.width = outW + 32; // +16px quiet zone each side
-  outCanvas.height = outH;
-  const outCtx = outCanvas.getContext('2d');
-
-  if (outCtx) {
-    outCtx.fillStyle = '#ffffff';
-    outCtx.fillRect(0, 0, outCanvas.width, outCanvas.height);
-
-    // Draw original cropped barcode into inner region
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = outW;
-    tempCanvas.height = outH;
-    const tempCtx = tempCanvas.getContext('2d');
-    if (tempCtx) {
-      tempCtx.imageSmoothingEnabled = false;
-      tempCtx.drawImage(
-        workCanvas,
-        bestRect.x,
-        bestRect.y,
-        bestRect.rw,
-        bestRect.rh,
-        0,
-        0,
-        outW,
-        outH
-      );
-
-      try {
-        const imgData = tempCtx.getImageData(0, 0, outW, outH);
-        const px = imgData.data;
-
-        // Compute per-column median/mean luminance across the central vertical band (25%..80% height)
-        // to eliminate camera noise while keeping exact horizontal bar edges untouched
-        const yStart = Math.floor(outH * 0.22);
-        const yEnd = Math.floor(outH * 0.82);
-        const colLum = new Float32Array(outW);
-        let globalMin = 255;
-        let globalMax = 0;
-
-        for (let x = 0; x < outW; x++) {
-          let sum = 0;
-          let count = 0;
-          for (let y = yStart; y < yEnd; y++) {
-            const idx = (y * outW + x) * 4;
-            const lum = 0.299 * px[idx] + 0.587 * px[idx + 1] + 0.114 * px[idx + 2];
-            sum += lum;
-            count++;
-          }
-          const avg = count > 0 ? sum / count : 255;
-          colLum[x] = avg;
-          if (avg < globalMin) globalMin = avg;
-          if (avg > globalMax) globalMax = avg;
-        }
-
-        const range = Math.max(1, globalMax - globalMin);
-        const midPoint = globalMin + range * 0.52;
-
-        // Enhance contrast & vertically stabilize bars without shifting any x-coordinate
-        for (let x = 0; x < outW; x++) {
-          // Local 1D unsharp mask along X to sharpen bar edges without moving zero-crossings
-          const left = colLum[Math.max(0, x - 1)];
-          const center = colLum[x];
-          const right = colLum[Math.min(outW - 1, x + 1)];
-          const sharpened = center * 1.6 - (left + right) * 0.3;
-
-          // Normalize & apply steep contrast curve preserving anti-aliased subpixel edge fidelity
-          let norm = ((sharpened - globalMin) / range) * 255;
-          if (sharpened < midPoint - range * 0.08) {
-            norm = Math.max(0, norm * 0.22);
-          } else if (sharpened > midPoint + range * 0.08) {
-            norm = Math.min(255, 235 + norm * 0.08);
-          } else {
-            norm = Math.max(0, Math.min(255, (norm - 128) * 2.4 + 128));
-          }
-          const val = Math.round(Math.max(0, Math.min(255, norm)));
-
-          for (let y = 6; y < outH - 6; y++) {
-            const idx = (y * outW + x) * 4;
-            px[idx] = val;
-            px[idx + 1] = val;
-            px[idx + 2] = val;
-            px[idx + 3] = 255;
-          }
-        }
-        tempCtx.putImageData(imgData, 0, 0);
-      } catch {}
-
-      outCtx.drawImage(tempCanvas, 16, 0);
-    }
-  }
-
-  return {
-    barcodeImageDataUrl: outCanvas.toDataURL('image/jpeg', 0.85),
-    transitions: bestTransitions,
-    contrastScore: bestContrast,
-    hasGreenHeader
-  };
-}
-
 // Extract student ID digits from a 2X04...@vnu.edu.vn email address (e.g. 23040123@vnu.edu.vn -> 23040123)
 function extractStudentCodeFromEmail(email: string): string {
   const prefix = (email || '').trim().split('@')[0] || '';
@@ -809,55 +564,6 @@ function isValidUlisStudentEmail(email: string): boolean {
   const clean = (email || '').trim().toLowerCase();
   return /^2\d04[0-9a-z._%+-]*@vnu\.edu\.vn$/i.test(clean);
 }
-
-// Automatic Student ID Card & Barcode Scanner / Analyzer
-async function detectStudentCardAndBarcode(
-  imageDataUrl: string,
-  emailHint = '',
-  currentCodeHint = ''
-) {
-  const img = new Image();
-  await new Promise((res, rej) => {
-    img.onload = res;
-    img.onerror = rej;
-    img.src = imageDataUrl;
-  });
-
-  let nativeRawValue = '';
-  let nativeBox: any = null;
-
-  // 1. Try native browser BarcodeDetector API if available
-  if (typeof window !== 'undefined' && 'BarcodeDetector' in window && window.BarcodeDetector) {
-    try {
-      const detector = new window.BarcodeDetector({
-        formats: ['code_128', 'code_39', 'ean_13', 'codabar', 'itf', 'qr_code']
-      });
-      const barcodes = await detector.detect(img);
-      if (barcodes && barcodes.length > 0 && barcodes[0].rawValue) {
-        nativeRawValue = String(barcodes[0].rawValue).trim();
-        nativeBox = barcodes[0].boundingBox || null;
-      }
-    } catch (e) {}
-  }
-
-  // 2. Extract & sharpen the original barcode image from the card and measure clarity
-  const barcodeExtraction = extractAndSharpenOriginalBarcode(img, nativeBox);
-  const emailCode = extractStudentCodeFromEmail(emailHint);
-  const manualCode = (currentCodeHint || '').trim();
-
-  if (emailCode && manualCode && emailCode !== manualCode) {
-    return {
-      detected: false,
-      isClear: true,
-      errorMessage: `Mã số sinh viên nhập vào (${manualCode}) KHÔNG TRÙNG KHỚP với Mã sinh viên từ Email @vnu.edu.vn (${emailCode}). Vui lòng kiểm tra lại!`,
-      method: 'Đối chiếu tự động Mã SV & Email sinh viên',
-      barcodeValue: '',
-      barcodeImage: barcodeExtraction.barcodeImageDataUrl,
-      extractedStudentId: cardStudentId,
-      emailMatched: false,
-      confidence: 90
-    };
-  }
 
 function getSeatStatusInfo(used: number, total: number) {
   const safeTotal = Math.max(1, Number(total) || 1);
@@ -1042,90 +748,17 @@ function UseatifyBrandLogo({ className = 'h-12 sm:h-14 w-auto' }: { className?: 
   );
 }
 
-// Preserved Original Barcode + Standard Code-128 Scannable Display Component
-function StudentBarcodeDisplay({
-  value = '23040001',
-  studentCode = '23040001',
-  barcodeImage = ''
-}: {
-  value?: string;
-  studentCode?: string;
-  barcodeImage?: string | null;
-}) {
-  // Official Code-128B pattern table for exact scannability when rendering vector bars
-  const bars = useMemo(() => {
-    const cleanCode = String(studentCode || value || '23040001').replace(/^ULIS-?/i, '');
-    const generated = [2, 1, 1, 2, 3, 2]; // Code-128 Start-C / Start-B guard
-    for (let i = 0; i < cleanCode.length; i++) {
-      const code = cleanCode.charCodeAt(i);
-      generated.push((code % 3) + 1);
-      generated.push(((code >> 2) % 3) + 1);
-      generated.push(((code >> 4) % 2) + 1);
-      generated.push(((code >> 1) % 2) + 1);
-      generated.push(1, 2);
-    }
-    generated.push(2, 3, 3, 1, 1, 1, 2); // Code-128 Stop guard
-    return generated;
-  }, [value, studentCode]);
-
-  const totalUnits = bars.reduce((acc, w) => acc + w, 0);
-
-  return (
-    <div className="bg-white px-4 py-3.5 rounded-2xl border border-slate-200 shadow-xs flex flex-col items-center w-full space-y-2">
-      {barcodeImage ? (
-        <div className="w-full flex flex-col items-center space-y-1.5">
-          <div className="w-full bg-white p-2 rounded-xl border border-slate-200 flex items-center justify-center overflow-hidden">
-            <img
-              src={barcodeImage}
-              alt={`Mã vạch gốc MÃ SV: ${studentCode}`}
-              className="w-full max-w-[320px] h-16 object-contain select-none"
-              style={{ imageRendering: 'crisp-edges' }}
-            />
-          </div>
-          <span className="text-[10px] font-semibold text-emerald-700">
-            ✓ Mã vạch nguyên bản từ Thẻ sinh viên (Đã làm nét chuẩn quét thư viện)
-          </span>
-        </div>
-      ) : (
-        <svg
-          viewBox={`0 0 ${totalUnits * 2} 54`}
-          className="w-full max-w-[300px] h-14"
-          preserveAspectRatio="none"
-        >
-          {(() => {
-            let x = 0;
-            return bars.map((w, idx) => {
-              const rectX = x;
-              const width = w * 2;
-              x += width;
-              if (idx % 2 === 1) return null;
-              return <rect key={idx} x={rectX} y="0" width={width} height="52" fill="#000000" />;
-            });
-          })()}
-        </svg>
-      )}
-      <div className="text-xs font-mono font-extrabold tracking-[0.22em] text-slate-900">
-        MÃ SV: {studentCode || value}
-      </div>
-    </div>
-  );
-}
-
-// Live WebRTC Camera Capture Modal (For Student ID Card & Student Portrait Photo)
+// Live WebRTC Camera Capture Modal (For Student Portrait Photo)
 function LiveCameraModal({
-  mode,
   onClose,
   onCapture
 }: {
-  mode: 'id_card' | 'portrait';
   onClose: () => void;
   onCapture: (compressedDataUrl: string) => void;
 }) {
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [facingMode, setFacingMode] = useState<'environment' | 'user'>(
-    mode === 'id_card' ? 'environment' : 'user'
-  );
+  const [facingMode, setFacingMode] = useState<'environment' | 'user'>('user');
   const [cameraError, setCameraError] = useState<string | null>(null);
   const [isReady, setIsReady] = useState(false);
 
@@ -1178,6 +811,7 @@ function LiveCameraModal({
       }
     }
   }, []);
+
   useEffect(() => {
     startCamera(facingMode);
     return () => {
@@ -1189,9 +823,7 @@ function LiveCameraModal({
 
   const handleSnap = () => {
     if (!videoRef.current || !isReady) return;
-    const maxW = mode === 'id_card' ? 480 : 320;
-    const maxH = mode === 'id_card' ? 300 : 400;
-    const compressedJpeg = compressDataUrlUnder60KB(videoRef.current, maxW, maxH);
+    const compressedJpeg = compressDataUrlUnder60KB(videoRef.current, 320, 400);
     if (compressedJpeg) {
       onCapture(compressedJpeg);
       onClose();
@@ -1204,11 +836,7 @@ function LiveCameraModal({
         <div className="flex items-center justify-between px-5 py-3.5 border-b border-slate-800 text-white">
           <div className="flex items-center gap-2 text-sm font-bold">
             <Camera className="w-4 h-4 text-emerald-400" />
-            <span>
-              {mode === 'id_card'
-                ? 'Chụp mặt trước Thẻ sinh viên (Có mã vạch)'
-                : 'Chụp ảnh chân dung đối chiếu'}
-            </span>
+            <span>Chụp ảnh chân dung đối chiếu</span>
           </div>
           <button
             type="button"
@@ -1235,19 +863,11 @@ function LiveCameraModal({
               />
               {/* Visual framing guide */}
               <div className="absolute inset-0 pointer-events-none flex items-center justify-center p-6">
-                {mode === 'id_card' ? (
-                  <div className="w-full max-w-xs aspect-[1.58/1] border-2 border-dashed border-emerald-400/80 rounded-xl flex flex-col justify-end p-2.5 bg-slate-950/15">
-                    <div className="border-t border-emerald-400/60 pt-1 text-[10px] text-emerald-200 font-semibold text-center bg-slate-950/60 rounded px-2 py-0.5">
-                      Canh chỉnh Thẻ sinh viên & Mã vạch nằm trong khung
-                    </div>
-                  </div>
-                ) : (
-                  <div className="w-44 h-56 border-2 border-dashed border-emerald-400/80 rounded-full flex items-end justify-center pb-3 bg-slate-950/15">
-                    <span className="text-[10px] text-emerald-200 font-semibold bg-slate-950/60 rounded px-2 py-0.5">
-                      Canh rõ khuôn mặt
-                    </span>
-                  </div>
-                )}
+                <div className="w-44 h-56 border-2 border-dashed border-emerald-400/80 rounded-full flex items-end justify-center pb-3 bg-slate-950/15">
+                  <span className="text-[10px] text-emerald-200 font-semibold bg-slate-950/60 rounded px-2 py-0.5">
+                    Canh rõ khuôn mặt
+                  </span>
+                </div>
               </div>
             </div>
           )}
@@ -1406,9 +1026,7 @@ function UseatifyMainApp() {
   const [navDropdownOpen, setNavDropdownOpen] = useState(false);
   const navDropdownRef = useRef<HTMLDivElement | null>(null);
 
-  const [guestCommunityTab, setGuestCommunityTab] = useState<
-    'reviews' | 'suggestions' | 'web_feedback'
-  >('reviews');
+  const [guestCommunityTab, setGuestCommunityTab] = useState<'reviews' | 'suggestions'>('reviews');
 
   // Staff Vertical Sidebar Pin / Auto-Collapse State
   const [isStaffSidebarPinned, setIsStaffSidebarPinned] = useState<boolean>(() => {
@@ -1436,7 +1054,7 @@ function UseatifyMainApp() {
     } catch {}
   }, [isStaffSidebarPinned]);
 
-  // 1-Second Live Clock for 2-Minute Code Countdown & 4-Year Account Lifecycle
+  // 1-Second Live Clock for 2-Hour Code Countdown & Lifecycle Checks
   const [nowTick, setNowTick] = useState(() => Date.now());
 
   // 1. Branches State (4 ULIS Homies)
@@ -1486,13 +1104,10 @@ function UseatifyMainApp() {
     return { ...INITIAL_SITE_CONFIG };
   });
 
-  // 4. Reviews, Suggestions, Web Feedbacks, Student Accounts (4-Year TTL), Entry Requests (2-Min Code TTL)
+  // 4. Reviews, Suggestions, Student Accounts, Entry Requests (2-Hour Code TTL)
   const [reviews, setReviews] = useState<any[]>(() => normalizeArray(persistedOnBoot?.reviews));
   const [suggestions, setSuggestions] = useState<any[]>(() =>
     normalizeArray(persistedOnBoot?.suggestions)
-  );
-  const [webFeedbacks, setWebFeedbacks] = useState<any[]>(() =>
-    normalizeArray(persistedOnBoot?.webFeedbacks)
   );
   const [studentAccounts, setStudentAccounts] = useState<any[]>(() => {
     const list = normalizeArray(persistedOnBoot?.studentAccounts);
@@ -1522,12 +1137,12 @@ function UseatifyMainApp() {
 
   const [contactWidgetOpen, setContactWidgetOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<{ src: string; caption: string } | null>(null);
-  const [liveCameraTarget, setLiveCameraTarget] = useState<'id_card' | 'portrait' | null>(null);
+  const [liveCameraTarget, setLiveCameraTarget] = useState<'portrait' | null>(null);
   const [studentSearchCode, setStudentSearchCode] = useState('');
   const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
   const [confirmDeleteSelfStudent, setConfirmDeleteSelfStudent] = useState(false);
 
-  // 5-Star Review Form State (Now integrated inside Student Pass & Anonymous Review section)
+  // 5-Star Review Form State
   const [revBranchId, setRevBranchId] = useState('homies_danang');
   const [revAuthor, setRevAuthor] = useState('');
   const [revRating, setRevRating] = useState(5);
@@ -1537,19 +1152,13 @@ function UseatifyMainApp() {
   const [revFilterBranch, setRevFilterBranch] = useState('ALL');
   const [revNotice, setRevNotice] = useState<{ type: string; text: string } | null>(null);
 
-  // Improvement Suggestion Form State
+  // Homies Suggestion Form State
   const [sugBranchId, setSugBranchId] = useState('homies_danang');
   const [sugCategory, setSugCategory] = useState(SUGGESTION_CATEGORIES[0]);
   const [sugSender, setSugSender] = useState('');
   const [sugContent, setSugContent] = useState('');
   const [sugPhoto, setSugPhoto] = useState<string | null>(null);
   const [sugNotice, setSugNotice] = useState<{ type: string; text: string } | null>(null);
-
-  // Website Feedback Form State
-  const [wfSender, setWfSender] = useState('');
-  const [wfRating, setWfRating] = useState(5);
-  const [wfContent, setWfContent] = useState('');
-  const [wfNotice, setWfNotice] = useState<{ type: string; text: string } | null>(null);
 
   // ==========================================================================
   // STUDENT DIGITAL HOMIES PASS STATE (PERSISTENT SESSION - ONLY LOGOUT ON CLICK)
@@ -1583,25 +1192,13 @@ function UseatifyMainApp() {
   const [stuLoginPassword, setStuLoginPassword] = useState('');
   const [stuLoginError, setStuLoginError] = useState('');
 
-  // Student Registration Form (Email 2X04...@vnu.edu.vn + Password + Homies Branch + Portrait Photo)
+  // Student Registration Form
   const [stuRegEmail, setStuRegEmail] = useState('');
   const [stuRegPassword, setStuRegPassword] = useState('');
   const [stuRegFullName, setStuRegFullName] = useState('');
   const [stuRegCode, setStuRegCode] = useState('');
   const [stuRegBranchId, setStuRegBranchId] = useState('homies_danang');
-  const [stuRegBarcode, setStuRegBarcode] = useState('');
-  const [stuRegBarcodeImage, setStuRegBarcodeImage] = useState<string | null>(null);
-  const [stuRegCardPhoto, setStuRegCardPhoto] = useState<string | null>(null);
   const [stuRegPortraitPhoto, setStuRegPortraitPhoto] = useState<string | null>(null);
-  const [stuScanStatus, setStuScanStatus] = useState<{
-    method: string;
-    barcodeValue: string;
-    barcodeImage?: string;
-    extractedId: string;
-    emailMatched?: boolean;
-    confidence: number;
-  } | null>(null);
-  const [stuRegScanning, setStuRegScanning] = useState(false);
   const [stuRegNotice, setStuRegNotice] = useState<{ type: string; text: string } | null>(null);
 
   // Student Temporary Entry Request Selection
@@ -1620,8 +1217,6 @@ function UseatifyMainApp() {
 
   // Pending Drafts for Branch Cover Photos
   const [branchCoverDrafts, setBranchCoverDrafts] = useState<Record<string, string>>({});
-  const [branchCoverEditMode, setBranchCoverEditMode] = useState<Record<string, boolean>>({});
-  const [branchCoverLoading, setBranchCoverLoading] = useState<Record<string, boolean>>({});
   const branchFileInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
 
   // Staff Contact Form State
@@ -1653,7 +1248,6 @@ function UseatifyMainApp() {
     siteConfig,
     reviews,
     suggestions,
-    webFeedbacks,
     studentAccounts,
     entryRequests,
     deletedIds
@@ -1666,7 +1260,6 @@ function UseatifyMainApp() {
       siteConfig,
       reviews,
       suggestions,
-      webFeedbacks,
       studentAccounts,
       entryRequests,
       deletedIds
@@ -1677,7 +1270,6 @@ function UseatifyMainApp() {
     siteConfig,
     reviews,
     suggestions,
-    webFeedbacks,
     studentAccounts,
     entryRequests,
     deletedIds
@@ -1770,7 +1362,6 @@ function UseatifyMainApp() {
       siteConfig,
       reviews,
       suggestions,
-      webFeedbacks,
       studentAccounts,
       entryRequests,
       deletedIds,
@@ -1782,7 +1373,6 @@ function UseatifyMainApp() {
     siteConfig,
     reviews,
     suggestions,
-    webFeedbacks,
     studentAccounts,
     entryRequests,
     deletedIds
@@ -1998,7 +1588,7 @@ function UseatifyMainApp() {
           });
         }
 
-        // 3. Merge Reviews, Suggestions, Web Feedbacks
+        // 3. Merge Reviews & Suggestions
         if (cloud.reviews) {
           setReviews((prev) => {
             const merged = mergeArrayById(prev, cloud.reviews, mergedDeleted);
@@ -2008,12 +1598,6 @@ function UseatifyMainApp() {
         if (cloud.suggestions) {
           setSuggestions((prev) => {
             const merged = mergeArrayById(prev, cloud.suggestions, mergedDeleted);
-            return JSON.stringify(merged) !== JSON.stringify(prev) ? merged : prev;
-          });
-        }
-        if (cloud.webFeedbacks) {
-          setWebFeedbacks((prev) => {
-            const merged = mergeArrayById(prev, cloud.webFeedbacks, mergedDeleted);
             return JSON.stringify(merged) !== JSON.stringify(prev) ? merged : prev;
           });
         }
@@ -2190,7 +1774,6 @@ function UseatifyMainApp() {
         if (p.siteConfig) setSiteConfig(p.siteConfig);
         if (Array.isArray(p.reviews)) setReviews(p.reviews);
         if (Array.isArray(p.suggestions)) setSuggestions(p.suggestions);
-        if (Array.isArray(p.webFeedbacks)) setWebFeedbacks(p.webFeedbacks);
         if (Array.isArray(p.studentAccounts)) setStudentAccounts(p.studentAccounts);
         if (Array.isArray(p.entryRequests)) setEntryRequests(p.entryRequests);
         if (Array.isArray(p.deletedIds)) setDeletedIds(p.deletedIds);
@@ -2209,7 +1792,6 @@ function UseatifyMainApp() {
       siteConfig: overrides.siteConfig || cur.siteConfig,
       reviews: overrides.reviews || cur.reviews,
       suggestions: overrides.suggestions || cur.suggestions,
-      webFeedbacks: overrides.webFeedbacks || cur.webFeedbacks,
       studentAccounts: overrides.studentAccounts || cur.studentAccounts,
       entryRequests: overrides.entryRequests || cur.entryRequests,
       deletedIds: overrides.deletedIds || cur.deletedIds,
@@ -2423,80 +2005,8 @@ function UseatifyMainApp() {
   }, [currentAccount?.id]);
 
   // --------------------------------------------------------------------------
-  // HANDLERS: STUDENT DIGITAL HOMIES CARD REGISTRATION, SCANNING & LOGIN
+  // HANDLERS: STUDENT DIGITAL HOMIES CARD REGISTRATION & LOGIN
   // --------------------------------------------------------------------------
-  const processStudentIdCardDataUrl = async (cardDataUrl: string) => {
-    setStuRegScanning(true);
-    setStuRegNotice(null);
-    try {
-      const scanResult = await detectStudentCardAndBarcode(cardDataUrl, stuRegEmail, stuRegCode);
-
-      if (!scanResult.detected || !scanResult.isClear) {
-        setStuRegCardPhoto(null);
-        setStuRegBarcodeImage(null);
-        setStuScanStatus(null);
-        setStuRegNotice({
-          type: 'error',
-          text:
-            scanResult.errorMessage ||
-            'Không đọc được rõ thông tin Thẻ sinh viên & Mã vạch. Vui lòng chụp lại rõ nét mặt trước Thẻ sinh viên ULIS!'
-        });
-        showToast('Ảnh thẻ chưa rõ hoặc không khớp Mã SV. Vui lòng chụp lại!', 'error');
-        return;
-      }
-
-      setStuRegCardPhoto(cardDataUrl);
-      const finalCode = scanResult.extractedStudentId || stuRegCode.trim();
-      if (finalCode) {
-        setStuRegCode(finalCode);
-      }
-      const finalBarcode = scanResult.barcodeValue || finalCode;
-      setStuRegBarcode(finalBarcode);
-      setStuRegBarcodeImage(scanResult.barcodeImage || null);
-      setStuScanStatus({
-        method: scanResult.method,
-        barcodeValue: finalBarcode,
-        barcodeImage: scanResult.barcodeImage,
-        extractedId: finalCode,
-        emailMatched: scanResult.emailMatched,
-        confidence: scanResult.confidence
-      });
-      showToast(`Đã ghi lại nguyên bản Mã vạch & đối chiếu Mã SV: ${finalCode}`);
-    } catch (err: any) {
-      setStuRegCardPhoto(null);
-      setStuRegBarcodeImage(null);
-      setStuScanStatus(null);
-      setStuRegNotice({
-        type: 'error',
-        text:
-          err.message ||
-          'Không thể đọc rõ thẻ sinh viên. Vui lòng chụp lại rõ nét mặt trước Thẻ sinh viên!'
-      });
-    } finally {
-      setStuRegScanning(false);
-    }
-  };
-
-  const handleStudentCardUploadAndScan = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    setStuRegScanning(true);
-    setStuRegNotice(null);
-
-    try {
-      const cardDataUrl = await resizeImageToDataURL(file, 520, 325, 'cover');
-      await processStudentIdCardDataUrl(cardDataUrl);
-    } catch (err: any) {
-      setStuRegNotice({
-        type: 'error',
-        text: err.message || 'Không thể xử lý ảnh thẻ sinh viên. Vui lòng chụp lại!'
-      });
-      setStuRegScanning(false);
-    } finally {
-      if (e.target) e.target.value = '';
-    }
-  };
-
   const handleStudentPortraitUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -2524,7 +2034,7 @@ function UseatifyMainApp() {
     if (!isValidUlisStudentEmail(cleanEmail)) {
       setStuRegNotice({
         type: 'error',
-        text: 'Hệ thống chỉ nhận Email sinh viên ULIS'
+        text: 'Hệ thống chỉ nhận Email sinh viên ULIS có 4 số đầu là 2X04 (trong đó X là số năm đăng ký) và đuôi @vnu.edu.vn (Ví dụ: 23040123@vnu.edu.vn, 24040123@vnu.edu.vn).'
       });
       return;
     }
@@ -2590,7 +2100,6 @@ function UseatifyMainApp() {
 
     const nowMs = Date.now();
     const accountExpiresAt = nowMs + FOUR_YEARS_MS;
-    const barcodeStr = stuRegBarcode.trim() || cleanCode;
     const newStuId = existing
       ? existing.id
       : `stu_${nowMs}_${Math.random().toString(36).slice(2, 6)}`;
@@ -2603,13 +2112,8 @@ function UseatifyMainApp() {
       studentCode: cleanCode,
       registeredBranchId: stuRegBranchId,
       registeredBranchName: branchesMap[stuRegBranchId]?.name || 'HOMIES Đa năng',
-      barcodeValue: barcodeStr,
-      barcodeImage: stuRegBarcodeImage || stuScanStatus?.barcodeImage || null,
-      idCardPhoto: stuRegCardPhoto || null,
+      barcodeValue: cleanCode,
       portraitPhoto: stuRegPortraitPhoto,
-      scanMethod:
-        'Đăng ký lần đầu bằng Thẻ sinh viên gốc tại quầy ra vào ' +
-        (branchesMap[stuRegBranchId]?.name || 'Homies'),
       status: 'pending',
       createdAt: getCurrentDateTimeStr(),
       createdAtMs: nowMs,
@@ -3000,39 +2504,6 @@ function UseatifyMainApp() {
     showToast(`Đã gửi góp ý tới Staff ${branchesMap[sugBranchId]?.name}!`);
   };
 
-  const handleSubmitWebFeedback = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!wfContent.trim()) {
-      setWfNotice({
-        type: 'error',
-        text: 'Vui lòng nhập nội dung góp ý cho Website USEATIFY.'
-      });
-      return;
-    }
-
-    const nowMs = Date.now();
-    const newFb = {
-      id: `wf_${nowMs}_${Math.random().toString(36).slice(2, 6)}`,
-      sender: wfSender.trim() || 'Sinh viên ULIS',
-      rating: wfRating,
-      content: wfContent.trim(),
-      createdAt: getCurrentDateTimeStr(),
-      createdAtMs: nowMs,
-      updatedAtMs: nowMs
-    };
-
-    const nextWebFeedbacks = [newFb, ...webFeedbacks];
-    setWebFeedbacks(nextWebFeedbacks);
-    await syncAllChannels({ webFeedbacks: nextWebFeedbacks });
-
-    setWfContent('');
-    setWfNotice({
-      type: 'success',
-      text: 'Cảm ơn bạn đã đóng góp ý kiến phát triển Website USEATIFY!'
-    });
-    showToast('Đã lưu Feedback cho Website USEATIFY!');
-  };
-
   // --------------------------------------------------------------------------
   // HANDLERS: STAFF LOGIN & SEAT COUNTER (+1 / -1)
   // --------------------------------------------------------------------------
@@ -3118,18 +2589,15 @@ function UseatifyMainApp() {
       return;
     }
 
-    setBranchCoverLoading((prev) => ({ ...prev, [branchId]: true }));
     try {
       const resizedDataUrl = await resizeImageToDataURL(file, 540, 310, 'cover');
       setBranchCoverDrafts((prev) => ({ ...prev, [branchId]: resizedDataUrl }));
-      setBranchCoverEditMode((prev) => ({ ...prev, [branchId]: true }));
       showToast(
         `Đã tải ảnh lên cho ${branchesMap[branchId]?.name}! Hãy bấm "Lưu ảnh vĩnh viễn" để hoàn tất.`
       );
     } catch (err: any) {
       showToast(err.message || 'Lỗi đọc tệp ảnh.', 'error');
     } finally {
-      setBranchCoverLoading((prev) => ({ ...prev, [branchId]: false }));
       if (inputEl) inputEl.value = '';
     }
   };
@@ -3168,7 +2636,6 @@ function UseatifyMainApp() {
       delete copy[branchId];
       return copy;
     });
-    setBranchCoverEditMode((prev) => ({ ...prev, [branchId]: false }));
 
     await syncAllChannels({ branchesMap: nextBranches }, branchId);
     showToast(`Đã lưu vĩnh viễn ảnh mô tả cho ${branchesMap[branchId]?.name}!`);
@@ -3192,7 +2659,6 @@ function UseatifyMainApp() {
       delete copy[branchId];
       return copy;
     });
-    setBranchCoverEditMode((prev) => ({ ...prev, [branchId]: false }));
 
     await syncAllChannels({ branchesMap: nextBranches }, branchId);
     showToast(`Đã xóa ảnh mô tả của ${branchesMap[branchId]?.name}.`);
@@ -3416,16 +2882,11 @@ function UseatifyMainApp() {
       ==================================================================== */}
       {liveCameraTarget && (
         <LiveCameraModal
-          mode={liveCameraTarget}
           onClose={() => setLiveCameraTarget(null)}
-          onCapture={async (compressedJpeg) => {
-            if (liveCameraTarget === 'id_card') {
-              await processStudentIdCardDataUrl(compressedJpeg);
-            } else {
-              setStuRegPortraitPhoto(compressedJpeg);
-              setStuRegNotice(null);
-              showToast('Đã chụp & nén ảnh chân dung (< 60KB) thành công!');
-            }
+          onCapture={(compressedJpeg) => {
+            setStuRegPortraitPhoto(compressedJpeg);
+            setStuRegNotice(null);
+            showToast('Đã chụp & nén ảnh chân dung (< 60KB) thành công!');
           }}
         />
       )}
@@ -4486,11 +3947,8 @@ function UseatifyMainApp() {
                         Đăng ký Thẻ Sinh Viên Số ULIS – ĐHQGHN (Tại quầy ra vào Homies)
                       </h2>
                       <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
-                        Chỉ nhận Email sinh viên có <strong>4 số đầu là 2X04</strong> (trong đó{' '}
-                        <strong>X</strong> là số năm đăng ký) kèm đuôi{' '}
-                        <span className="font-mono font-bold text-slate-800">@vnu.edu.vn</span>, chọn
-                        cơ sở Homies bạn đang đứng và tải lên <strong>Ảnh thẻ chân dung</strong> để
-                        Staff tại quầy đối chiếu thẻ sinh viên gốc và phê duyệt.
+                        Chỉ nhận Email sinh viên ULIS chọn cơ sở Homies bạn đang đứng và tải lên ảnh
+                        cá nhân để nhân viên tại quầy đối chiếu và phê duyệt.
                       </p>
                     </div>
 
@@ -4535,7 +3993,6 @@ function UseatifyMainApp() {
                             const codeFromMail = extractStudentCodeFromEmail(val);
                             if (codeFromMail) {
                               setStuRegCode(codeFromMail);
-                              setStuRegBarcode(codeFromMail);
                             }
                           }}
                           placeholder="Nhập email sinh viên"
@@ -4551,10 +4008,7 @@ function UseatifyMainApp() {
                           type="text"
                           required
                           value={stuRegCode}
-                          onChange={(e) => {
-                            setStuRegCode(e.target.value);
-                            setStuRegBarcode(e.target.value.trim());
-                          }}
+                          onChange={(e) => setStuRegCode(e.target.value)}
                           placeholder="Nhập mã số sinh viên"
                           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-mono font-bold"
                         />
@@ -6149,7 +5603,8 @@ function UseatifyMainApp() {
                         )}
                         <div className="space-y-1.5">
                           <label className="block text-xs font-bold text-slate-700">
-                            Mật khẩu hiện tại (Bắt buộc để xác thực) *
+                            Mật khẩu hiện tại (Bắt buộc để xác thực){' '}
+                            <span className="text-rose-600">*</span>
                           </label>
                           <input
                             type="password"
