@@ -1249,7 +1249,6 @@ function LiveCameraModal({
       }
     }
   }, []);
-
   useEffect(() => {
     startCamera(facingMode);
     return () => {
@@ -3958,42 +3957,44 @@ function UseatifyMainApp() {
               id="community-section"
               className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6"
             >
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
-                <div>
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+                <div className="max-w-2xl space-y-1">
                   <div className="text-xs font-bold text-[#165b40] uppercase tracking-wider">
                     CỘNG ĐỒNG SINH VIÊN ULIS • ĐÁNH GIÁ &amp; GÓP Ý HOMIES
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
+                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
                     Đánh Giá 5 Sao &amp; Góp Ý Homies
                   </h2>
-                  <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                     Chia sẻ trải nghiệm thực tế kèm hình ảnh tại 4 cơ sở Homies hoặc gửi góp ý ẩn danh
                     trực tiếp tới Ban Quản lý từng cơ sở.
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 p-1 rounded-xl self-start">
+                <div className="inline-grid grid-cols-2 sm:inline-flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shrink-0 self-start lg:self-center w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setGuestCommunityTab('reviews')}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                       guestCommunityTab === 'reviews'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-[#165b40] text-white shadow-xs'
+                        : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
                     }`}
                   >
-                    ⭐ Đánh giá 5 Sao ({approvedReviews.length})
+                    <span>⭐</span>
+                    <span>Đánh giá 5 Sao ({approvedReviews.length})</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setGuestCommunityTab('suggestions')}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
+                    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                       guestCommunityTab === 'suggestions'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
+                        ? 'bg-[#165b40] text-white shadow-xs'
+                        : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
                     }`}
                   >
-                    💡 Góp ý Homies
+                    <span>💡</span>
+                    <span>Góp ý Homies</span>
                   </button>
                 </div>
               </div>
@@ -5323,31 +5324,38 @@ function UseatifyMainApp() {
                                 key={branch.id}
                                 className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-5"
                               >
-                                {/* Card Header: Branch Name + Address/Updated Time + Status Pill */}
-                                <div className="flex items-start justify-between gap-3">
-                                  <div className="space-y-1">
-                                    <h3 className="text-xl font-extrabold text-slate-900 flex items-center gap-2 tracking-tight">
-                                      <span>{branch.emoji}</span>
-                                      <span>{branch.name}</span>
+                                {/* Card Header: Branch Name + Status Pill on Top Row, Full-Width Address & Updated Time Below */}
+                                <div className="space-y-2.5 pb-3 border-b border-slate-100">
+                                  <div className="flex items-center justify-between gap-3">
+                                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2 tracking-tight min-w-0">
+                                      <span className="shrink-0">{branch.emoji}</span>
+                                      <span className="truncate">{branch.name}</span>
                                     </h3>
-                                    <p className="text-xs text-slate-500 flex items-center gap-1">
-                                      <span>📍 {branch.address}</span>
-                                      <span>•</span>
+
+                                    <span
+                                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shrink-0 whitespace-nowrap ${st.softBg} ${st.textAccent} ${st.cardAccentBorder}`}
+                                    >
+                                      <span className={`w-2 h-2 rounded-full ${st.barColor}`} />
+                                      <span>{st.label}</span>
+                                    </span>
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
+                                    <span className="inline-flex items-center gap-1.5 font-medium text-slate-600">
+                                      <MapPin className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+                                      <span>{branch.address}</span>
+                                    </span>
+
+                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-600 font-medium whitespace-nowrap">
+                                      <Clock className="w-3 h-3 text-slate-500 shrink-0" />
                                       <span>
                                         Cập nhật:{' '}
-                                        <strong className="text-slate-700 font-bold">
+                                        <strong className="text-slate-800 font-mono font-bold">
                                           {branch.updatedAt}
                                         </strong>
                                       </span>
-                                    </p>
+                                    </span>
                                   </div>
-
-                                  <span
-                                    className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shrink-0 ${st.softBg} ${st.textAccent} ${st.cardAccentBorder}`}
-                                  >
-                                    <span className={`w-2 h-2 rounded-full ${st.barColor}`} />
-                                    <span>{st.label}</span>
-                                  </span>
                                 </div>
 
                                 {/* Center Large Seat Display Box (Image 3 style) */}
