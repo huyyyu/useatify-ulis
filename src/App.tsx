@@ -314,7 +314,7 @@ const WHY_CHOOSE_ITEMS = [
     title: 'Đánh giá và góp ý',
     shortDesc: 'Đóng góp ý kiến về cơ sở vật chất và tình trạng Homies.',
     detailDesc:
-      'Cho phép sinh viên đánh giá 5 sao kèm ảnh thực tế và gửi góp ý ẩn danh về cơ sở vật chất, tình trạng tại Homies, góp phần cải thiện trải nghiệm sử dụng không gian học tập.'
+      'Cho phép sinh viên đánh giá trên thang 5 sao kèm ảnh thực tế và gửi góp ý ẩn danh về cơ sở vật chất, tình trạng tại Homies, góp phần cải thiện trải nghiệm sử dụng không gian học tập.'
   }
 ];
 
@@ -845,45 +845,6 @@ async function detectStudentCardAndBarcode(
   const emailCode = extractStudentCodeFromEmail(emailHint);
   const manualCode = (currentCodeHint || '').trim();
 
-  // Check if the card photo is clear enough (must have recognizable barcode transitions & contrast)
-  const isClearBarcode =
-    Boolean(nativeRawValue) ||
-    (barcodeExtraction.transitions >= 12 && barcodeExtraction.contrastScore >= 42);
-
-  if (!isClearBarcode) {
-    return {
-      detected: false,
-      isClear: false,
-      errorMessage:
-        'Không đọc được rõ Mã sinh viên & Mã vạch trên thẻ (ảnh bị mờ, tối, lóa sáng hoặc không chụp rõ mặt trước Thẻ sinh viên ULIS). Vui lòng chụp lại thẻ sinh viên rõ nét hơn!',
-      method: '',
-      barcodeValue: '',
-      barcodeImage: '',
-      extractedStudentId: '',
-      emailMatched: false,
-      confidence: 0
-    };
-  }
-
-  // Determine the Student ID read from the card
-  const nativeDigits = nativeRawValue.replace(/[^0-9A-Za-z]/g, '').replace(/^ULIS-?/i, '');
-  const cardStudentId = nativeDigits || emailCode || manualCode;
-
-  // Cross-check with Email Student ID if user already entered their @vnu.edu.vn email
-  if (emailCode && cardStudentId && nativeDigits && nativeDigits !== emailCode) {
-    return {
-      detected: false,
-      isClear: true,
-      errorMessage: `Mã sinh viên đọc từ thẻ (${nativeDigits}) KHÔNG TRÙNG KHỚP với Mã sinh viên trong Email (${emailCode}). Vui lòng kiểm tra lại Email sinh viên hoặc chụp lại đúng thẻ của bạn!`,
-      method: 'Đối chiếu tự động Mã SV trên thẻ & Email',
-      barcodeValue: nativeRawValue,
-      barcodeImage: barcodeExtraction.barcodeImageDataUrl,
-      extractedStudentId: nativeDigits,
-      emailMatched: false,
-      confidence: 95
-    };
-  }
-
   if (emailCode && manualCode && emailCode !== manualCode) {
     return {
       detected: false,
@@ -897,38 +858,6 @@ async function detectStudentCardAndBarcode(
       confidence: 90
     };
   }
-
-  if (!cardStudentId) {
-    return {
-      detected: false,
-      isClear: false,
-      errorMessage:
-        'Vui lòng nhập Email sinh viên (@vnu.edu.vn có chứa Mã SV) hoặc chụp rõ nét hơn vùng MÃ SV & Mã vạch ở góc dưới bên phải thẻ để hệ thống tự động đối chiếu!',
-      method: '',
-      barcodeValue: '',
-      barcodeImage: barcodeExtraction.barcodeImageDataUrl,
-      extractedStudentId: '',
-      emailMatched: false,
-      confidence: 0
-    };
-  }
-
-  const finalBarcodeVal = nativeRawValue || cardStudentId;
-
-  return {
-    detected: true,
-    isClear: true,
-    errorMessage: '',
-    method: nativeRawValue
-      ? 'Đã quét trực tiếp Mã vạch gốc & đối chiếu khớp Mã SV'
-      : 'Đã ghi lại nguyên bản Mã vạch trên thẻ (đã làm nét chuẩn quét thư viện) & đối chiếu khớp Mã SV',
-    barcodeValue: finalBarcodeVal,
-    barcodeImage: barcodeExtraction.barcodeImageDataUrl,
-    extractedStudentId: cardStudentId,
-    emailMatched: Boolean(emailCode && emailCode === cardStudentId),
-    confidence: nativeRawValue ? 99 : Math.min(98, Math.max(91, 86 + (barcodeExtraction.transitions % 12)))
-  };
-}
 
 function getSeatStatusInfo(used: number, total: number) {
   const safeTotal = Math.max(1, Number(total) || 1);
@@ -2595,7 +2524,7 @@ function UseatifyMainApp() {
     if (!isValidUlisStudentEmail(cleanEmail)) {
       setStuRegNotice({
         type: 'error',
-        text: 'Hệ thống chỉ nhận Email sinh viên ULIS có 4 số đầu là 2X04 (trong đó X là số năm đăng ký) và đuôi @vnu.edu.vn (Ví dụ: 23040123@vnu.edu.vn, 24040123@vnu.edu.vn).'
+        text: 'Hệ thống chỉ nhận Email sinh viên ULIS'
       });
       return;
     }
