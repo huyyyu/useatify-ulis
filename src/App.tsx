@@ -1595,6 +1595,9 @@ function UseatifyMainApp() {
   const [contactWidgetOpen, setContactWidgetOpen] = useState(false);
   const [lightboxPhoto, setLightboxPhoto] = useState<{ src: string; caption: string } | null>(null);
   const [liveCameraTarget, setLiveCameraTarget] = useState<'id_card' | 'portrait' | null>(null);
+  const [studentSearchCode, setStudentSearchCode] = useState('');
+  const [expandedStudentId, setExpandedStudentId] = useState<string | null>(null);
+  const [confirmDeleteSelfStudent, setConfirmDeleteSelfStudent] = useState(false);
 
   // 5-Star Review Form State (Now integrated inside Student Pass & Anonymous Review section)
   const [revBranchId, setRevBranchId] = useState('homies_danang');
@@ -1920,10 +1923,23 @@ function UseatifyMainApp() {
       return now >= expiry;
     });
 
-    if (expiredRequests.length > 0 || expiredAccounts.length > 0) {
+    // 3. Silent background cleanup for completed suggestions after 2 days
+    const TWO_DAYS_MS = 2 * 24 * 60 * 60 * 1000;
+    const expiredCompletedSuggestions = (cur.suggestions || []).filter((sug) => {
+      if (!sug || sug.status !== 'completed') return false;
+      const completedTime = sug.completedAtMs || sug.updatedAtMs || sug.createdAtMs || now;
+      return now - completedTime >= TWO_DAYS_MS;
+    });
+
+    if (
+      expiredRequests.length > 0 ||
+      expiredAccounts.length > 0 ||
+      expiredCompletedSuggestions.length > 0
+    ) {
       newlyDeletedIds = [
         ...expiredRequests.map((r) => r.id),
-        ...expiredAccounts.map((a) => a.id)
+        ...expiredAccounts.map((a) => a.id),
+        ...expiredCompletedSuggestions.map((s) => s.id)
       ];
       const nextDeleted = Array.from(new Set([...(cur.deletedIds || []), ...newlyDeletedIds]));
       const nextEntryRequests = (cur.entryRequests || []).filter(
@@ -1932,16 +1948,23 @@ function UseatifyMainApp() {
       const nextStudentAccounts = (cur.studentAccounts || []).filter(
         (a) => !newlyDeletedIds.includes(a.id)
       );
+      const nextSuggestions = (cur.suggestions || []).filter(
+        (s) => !newlyDeletedIds.includes(s.id)
+      );
 
       setDeletedIds(nextDeleted);
       if (expiredRequests.length > 0) setEntryRequests(nextEntryRequests);
       if (expiredAccounts.length > 0) {
         setStudentAccounts(nextStudentAccounts);
       }
+      if (expiredCompletedSuggestions.length > 0) {
+        setSuggestions(nextSuggestions);
+      }
 
       pushToRealtimeDatabase({
         entryRequests: nextEntryRequests,
         studentAccounts: nextStudentAccounts,
+        suggestions: nextSuggestions,
         deletedIds: nextDeleted,
         updatedAtMs: now
       });
@@ -2370,30 +2393,33 @@ function UseatifyMainApp() {
     ).length;
   }, [suggestions, currentAccount, accessibleBranchIds]);
 
-  // Scoped Student Accounts for Master Staff (homies_admin) and Branch Staff of the selected Homies branch
+  // Student Accounts sorted by registration date (available to all Homies branch staff and Master Admin)
   const scopedStudentAccounts = useMemo(() => {
     if (!currentAccount) return [];
-    if (isMaster && masterSelectedBranch === 'ALL') return studentAccounts;
-    return studentAccounts.filter((s) => {
-      if (!s) return false;
-      const regBranch = s.registeredBranchId || 'homies_danang';
-      return activeManagedBranchIds.includes(regBranch);
-    });
-  }, [studentAccounts, currentAccount, isMaster, masterSelectedBranch, activeManagedBranchIds]);
+    const baseList =
+      isMaster && masterSelectedBranch !== 'ALL'
+        ? studentAccounts.filter(
+            (s) => s && (s.registeredBranchId || 'homies_danang') === masterSelectedBranch
+          )
+        : studentAccounts.filter(Boolean);
+
+    // Sort by registration date (createdAtMs descending)
+    const sorted = [...baseList].sort(
+      (a, b) => (b.createdAtMs || 0) - (a.createdAtMs || 0)
+    );
+
+    const query = studentSearchCode.trim().toLowerCase();
+    if (!query) return sorted;
+    return sorted.filter((s) =>
+      String(s.studentCode || '')
+        .toLowerCase()
+        .includes(query)
+    );
+  }, [studentAccounts, currentAccount, isMaster, masterSelectedBranch, studentSearchCode]);
 
   const pendingStudentAccountsCount = useMemo(() => {
-    if (!currentAccount) {
-      return studentAccounts.filter((s) => s && s.status === 'pending').length;
-    }
-    if (isMaster) {
-      return studentAccounts.filter((s) => s && s.status === 'pending').length;
-    }
-    return studentAccounts.filter((s) => {
-      if (!s || s.status !== 'pending') return false;
-      const regBranch = s.registeredBranchId || 'homies_danang';
-      return accessibleBranchIds.includes(regBranch);
-    }).length;
-  }, [studentAccounts, currentAccount, isMaster, accessibleBranchIds]);
+    return studentAccounts.filter((s) => s && s.status === 'pending').length;
+  }, [studentAccounts]);
 
   // Scoped Entry Requests for current Staff's branch(es)
   const scopedEntryRequests = useMemo(() => {
@@ -2796,8 +2822,42 @@ function UseatifyMainApp() {
   };
 
   // --------------------------------------------------------------------------
-  // HANDLERS: STAFF APPROVAL OF STUDENT ACCOUNTS (BRANCH STAFF + MASTER) & 2-HOUR CODES
+  // HANDLERS: STAFF APPROVAL & PERMANENT DATABASE DELETION OF STUDENT ACCOUNTS
   // --------------------------------------------------------------------------
+  const handleDeleteStudentAccountFromDatabase = async (studentId: string) => {
+    const target = studentAccounts.find((s) => s && s.id === studentId);
+    const nextDeleted = Array.from(new Set([...deletedIds, studentId]));
+    const nextAccounts = studentAccounts.filter((s) => s && s.id !== studentId);
+    const nextEntryRequests = entryRequests.filter((r) => r && r.studentId !== studentId);
+
+    setDeletedIds(nextDeleted);
+    setStudentAccounts(nextAccounts);
+    setEntryRequests(nextEntryRequests);
+    setConfirmDeleteSelfStudent(false);
+    if (expandedStudentId === studentId) {
+      setExpandedStudentId(null);
+    }
+
+    if (loggedInStudentId === studentId) {
+      setLoggedInStudentId(null);
+      setPersistedStudentBackup(null);
+      try {
+        localStorage.removeItem('useatify_active_student_id');
+        localStorage.removeItem('useatify_active_student_profile_v6');
+      } catch {}
+    }
+
+    await syncAllChannels({
+      studentAccounts: nextAccounts,
+      entryRequests: nextEntryRequests,
+      deletedIds: nextDeleted
+    });
+
+    showToast(
+      `Đã xóa vĩnh viễn tài khoản sinh viên ${target?.fullName || ''} (${target?.studentCode || ''}) khỏi cơ sở dữ liệu.`
+    );
+  };
+
   const handleMasterApproveStudentAccount = async (
     studentId: string,
     decision: 'approve' | 'delete'
@@ -2805,28 +2865,15 @@ function UseatifyMainApp() {
     const target = studentAccounts.find((s) => s && s.id === studentId);
     if (!target) return;
 
-    const regBranch = target.registeredBranchId || 'homies_danang';
-    const hasPermission = isMaster || canManageBranch(regBranch);
-    if (!hasPermission) {
-      showToast(
-        `Chỉ Staff phụ trách ${branchesMap[regBranch]?.name || 'cơ sở này'} hoặc Tài khoản Tổng mới có quyền phê duyệt hồ sơ này!`,
-        'error'
-      );
+    if (!currentAccount) {
+      showToast('Vui lòng đăng nhập tài khoản Staff hoặc Admin để thực hiện!', 'error');
       return;
     }
 
     const nowMs = Date.now();
 
     if (decision === 'delete') {
-      const nextDeleted = Array.from(new Set([...deletedIds, studentId]));
-      const nextAccounts = studentAccounts.filter((s) => s && s.id !== studentId);
-      setDeletedIds(nextDeleted);
-      setStudentAccounts(nextAccounts);
-      if (loggedInStudentId === studentId) {
-        handleStudentExplicitLogout();
-      }
-      await syncAllChannels({ studentAccounts: nextAccounts, deletedIds: nextDeleted });
-      showToast('Đã từ chối & xóa yêu cầu đăng ký không hợp lệ.');
+      await handleDeleteStudentAccountFromDatabase(studentId);
       return;
     }
 
@@ -3264,19 +3311,40 @@ function UseatifyMainApp() {
     }
   };
 
-  const handleToggleSuggestionStatus = async (suggestionId: string) => {
+  const handleApproveSuggestionToAcknowledged = async (suggestionId: string) => {
     const target = suggestions.find((s) => s.id === suggestionId);
     if (!target || !currentAccount?.allowedBranches.includes(target.branchId)) return;
 
+    const nowMs = Date.now();
     const updatedSug = {
       ...target,
-      status: target.status === 'unread' ? 'resolved' : 'unread',
-      updatedAtMs: Date.now()
+      status: 'acknowledged',
+      acknowledgedAt: getCurrentDateTimeStr(),
+      acknowledgedAtMs: nowMs,
+      updatedAtMs: nowMs
     };
     const nextSuggestions = suggestions.map((s) => (s.id === suggestionId ? updatedSug : s));
     setSuggestions(nextSuggestions);
     await syncAllChannels({ suggestions: nextSuggestions });
-    showToast('Đã lưu trạng thái xử lý góp ý.');
+    showToast('Đã phê duyệt! Góp ý đã chuyển sang mục "Góp ý được ghi nhận".');
+  };
+
+  const handleMarkSuggestionCompleted = async (suggestionId: string) => {
+    const target = suggestions.find((s) => s.id === suggestionId);
+    if (!target || !currentAccount?.allowedBranches.includes(target.branchId)) return;
+
+    const nowMs = Date.now();
+    const updatedSug = {
+      ...target,
+      status: 'completed',
+      completedAt: getCurrentDateTimeStr(),
+      completedAtMs: nowMs,
+      updatedAtMs: nowMs
+    };
+    const nextSuggestions = suggestions.map((s) => (s.id === suggestionId ? updatedSug : s));
+    setSuggestions(nextSuggestions);
+    await syncAllChannels({ suggestions: nextSuggestions });
+    showToast('Đã chuyển góp ý vào mục "Đã thực hiện"!');
   };
 
   const handleDeleteSuggestion = async (suggestionId: string) => {
@@ -3288,7 +3356,7 @@ function UseatifyMainApp() {
     setDeletedIds(nextDeleted);
     setSuggestions(nextSuggestions);
     await syncAllChannels({ suggestions: nextSuggestions, deletedIds: nextDeleted });
-    showToast('Đã xóa thư góp ý.');
+    showToast('Đã xóa góp ý Homies.');
   };
 
   // --------------------------------------------------------------------------
@@ -3475,9 +3543,9 @@ function UseatifyMainApp() {
       ==================================================================== */}
       <header className="sticky top-0 z-40 bg-[#fbf8f3]/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between py-2.5 gap-3">
-            {/* Brand Identity (Top-Left Official Logo + Slogan Alongside) */}
-            <div className="flex flex-wrap items-center gap-2 sm:gap-4 min-w-0">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between py-2.5 sm:py-3 gap-2.5 md:gap-4">
+            {/* Brand Identity (Official Logo + Slogan - Never squished on mobile) */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 min-w-0">
               <div
                 onClick={() => {
                   setActiveTab('guest');
@@ -3489,51 +3557,53 @@ function UseatifyMainApp() {
                 <UseatifyBrandLogo className="h-11 sm:h-14 w-auto" />
               </div>
 
-              <div className="hidden md:flex items-center gap-2.5 pl-1">
-                <span className="w-8 lg:w-10 h-[1.5px] bg-amber-600/60 rounded-full" />
-                <span className="text-amber-600 text-[10px]">◆</span>
-                <span className="text-xs lg:text-sm font-serif italic font-semibold text-slate-700 tracking-wide">
+              <div className="flex items-center gap-2 sm:pl-1">
+                <span className="w-5 sm:w-8 lg:w-10 h-[1.5px] bg-amber-600/60 rounded-full shrink-0" />
+                <span className="text-amber-600 text-[10px] shrink-0">◆</span>
+                <span className="text-xs lg:text-sm font-serif italic font-semibold text-slate-700 tracking-wide truncate">
                   {siteConfig.slogan}
                 </span>
-                <span className="text-amber-600 text-[10px]">◆</span>
-                <span className="w-8 lg:w-10 h-[1.5px] bg-amber-600/60 rounded-full" />
+                <span className="text-amber-600 text-[10px] shrink-0">◆</span>
+                <span className="w-5 sm:w-8 lg:w-10 h-[1.5px] bg-amber-600/60 rounded-full shrink-0" />
               </div>
             </div>
 
-            {/* Top-Right Single Active Category Button + Stylized Downward Arrow Dropdown */}
-            <div ref={navDropdownRef} className="relative shrink-0">
+            {/* Category Button + Stylized Downward Arrow Dropdown (Below logo/slogan on mobile, right-aligned on desktop) */}
+            <div ref={navDropdownRef} className="relative w-full md:w-auto shrink-0">
               <button
                 type="button"
                 onClick={() => setNavDropdownOpen((prev) => !prev)}
-                className="inline-flex items-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#165b40] hover:bg-[#124b35] text-white text-xs sm:text-sm font-bold shadow-sm border border-emerald-900/20 transition-all cursor-pointer"
+                className="w-full md:w-auto inline-flex items-center justify-between md:justify-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#165b40] hover:bg-[#124b35] text-white text-xs sm:text-sm font-bold shadow-sm border border-emerald-900/20 transition-all cursor-pointer"
               >
-                {activeTab === 'guest' && (
-                  <>
-                    <Eye className="w-4 h-4 text-emerald-200 shrink-0" />
-                    <span>GUEST • Tra cứu chỗ ngồi</span>
-                  </>
-                )}
-                {activeTab === 'student_pass' && (
-                  <>
-                    <IdCard className="w-4 h-4 text-amber-300 shrink-0" />
-                    <span>STUDENT PASS • Thẻ sinh viên số</span>
-                  </>
-                )}
-                {activeTab === 'staff' && (
-                  <>
-                    <ShieldCheck className="w-4 h-4 text-emerald-200 shrink-0" />
-                    <span>STAFF • Quản trị hệ thống</span>
-                    {(pendingEntryRequestsCountForRole > 0 || pendingStudentAccountsCount > 0) && (
-                      <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-rose-500 text-white">
-                        {pendingEntryRequestsCountForRole + pendingStudentAccountsCount}
-                      </span>
-                    )}
-                  </>
-                )}
+                <div className="flex items-center gap-2.5 min-w-0">
+                  {activeTab === 'guest' && (
+                    <>
+                      <Eye className="w-4 h-4 text-emerald-200 shrink-0" />
+                      <span className="truncate">GUEST • Tra cứu chỗ ngồi</span>
+                    </>
+                  )}
+                  {activeTab === 'student_pass' && (
+                    <>
+                      <IdCard className="w-4 h-4 text-amber-300 shrink-0" />
+                      <span className="truncate">STUDENT PASS • Thẻ sinh viên số</span>
+                    </>
+                  )}
+                  {activeTab === 'staff' && (
+                    <>
+                      <ShieldCheck className="w-4 h-4 text-emerald-200 shrink-0" />
+                      <span className="truncate">STAFF • Quản trị hệ thống</span>
+                      {(pendingEntryRequestsCountForRole > 0 || pendingStudentAccountsCount > 0) && (
+                        <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-rose-500 text-white shrink-0">
+                          {pendingEntryRequestsCountForRole + pendingStudentAccountsCount}
+                        </span>
+                      )}
+                    </>
+                  )}
+                </div>
 
                 {/* Stylized Downward Arrow Icon */}
                 <span
-                  className={`ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/15 text-amber-200 transition-transform duration-200 ${
+                  className={`ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/15 text-amber-200 transition-transform duration-200 shrink-0 ${
                     navDropdownOpen ? 'rotate-180 bg-white/25' : ''
                   }`}
                 >
@@ -3553,7 +3623,7 @@ function UseatifyMainApp() {
 
               {/* 3-Item Dropdown Menu (Auto-closes when selecting an item) */}
               {navDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-80 sm:w-88 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2 z-50 space-y-1">
+                <div className="absolute left-0 right-0 md:left-auto md:right-0 mt-2 w-full md:w-88 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2 z-50 space-y-1">
                   <button
                     type="button"
                     onClick={() => {
@@ -3883,7 +3953,7 @@ function UseatifyMainApp() {
               </div>
             </section>
 
-            {/* RESTORED TO GUEST: 5-STAR REVIEWS (WITH PHOTO), ANONYMOUS SUGGESTION BOX & WEBSITE FEEDBACK */}
+            {/* RESTORED TO GUEST: 5-STAR REVIEWS (WITH PHOTO) & GÓP Ý HOMIES */}
             <section
               id="community-section"
               className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6"
@@ -3891,10 +3961,10 @@ function UseatifyMainApp() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-5">
                 <div>
                   <div className="text-xs font-bold text-[#165b40] uppercase tracking-wider">
-                    CỘNG ĐỒNG SINH VIÊN ULIS • ĐÁNH GIÁ &amp; HÒM THƯ GÓP Ý ẨN DANH
+                    CỘNG ĐỒNG SINH VIÊN ULIS • ĐÁNH GIÁ &amp; GÓP Ý HOMIES
                   </div>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
-                    Đánh Giá 5 Sao &amp; Hòm Thư Góp Ý Nội Bộ Homies
+                    Đánh Giá 5 Sao &amp; Góp Ý Homies
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-600 mt-0.5">
                     Chia sẻ trải nghiệm thực tế kèm hình ảnh tại 4 cơ sở Homies hoặc gửi góp ý ẩn danh
@@ -3923,18 +3993,7 @@ function UseatifyMainApp() {
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    💡 Hòm thư Góp ý Ẩn danh
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setGuestCommunityTab('web_feedback')}
-                    className={`px-3.5 py-2 rounded-lg text-xs font-bold transition-colors whitespace-nowrap shrink-0 cursor-pointer ${
-                      guestCommunityTab === 'web_feedback'
-                        ? 'bg-white text-slate-900 shadow-xs'
-                        : 'text-slate-600 hover:text-slate-900'
-                    }`}
-                  >
-                    💬 Góp ý Website
+                    💡 Góp ý Homies
                   </button>
                 </div>
               </div>
@@ -4157,7 +4216,7 @@ function UseatifyMainApp() {
                 </div>
               )}
 
-              {/* SUB-TAB 2: ANONYMOUS SUGGESTION BOX */}
+              {/* SUB-TAB 2: GÓP Ý HOMIES */}
               {guestCommunityTab === 'suggestions' && (
                 <form
                   onSubmit={handleSubmitGuestSuggestion}
@@ -4166,11 +4225,11 @@ function UseatifyMainApp() {
                   <div className="space-y-1">
                     <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
                       <Lightbulb className="w-4 h-4 text-amber-500" />
-                      <span>Hòm thư Góp ý Ẩn danh gửi trực tiếp tới Quản lý Cơ sở</span>
+                      <span>Góp ý Homies gửi trực tiếp tới Quản lý Cơ sở</span>
                     </h3>
                     <p className="text-xs text-slate-600">
-                      Thư góp ý được bảo mật và chuyển thẳng vào Hòm thư của Staff phụ trách cơ sở
-                      bạn chọn.
+                      Góp ý của bạn được chuyển thẳng vào Hòm thư của Staff phụ trách cơ sở Homies bạn
+                      chọn để phê duyệt ghi nhận và thực hiện.
                     </p>
                   </div>
 
@@ -4264,57 +4323,7 @@ function UseatifyMainApp() {
                     type="submit"
                     className="w-full py-3 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs sm:text-sm font-bold cursor-pointer"
                   >
-                    Gửi ẩn danh vào Hòm thư Quản lý Cơ sở
-                  </button>
-                </form>
-              )}
-
-              {/* SUB-TAB 3: WEBSITE FEEDBACK */}
-              {guestCommunityTab === 'web_feedback' && (
-                <form
-                  onSubmit={handleSubmitWebFeedback}
-                  className="max-w-xl mx-auto bg-slate-50 p-6 rounded-2xl border border-slate-200/80 space-y-4"
-                >
-                  <h3 className="text-base font-extrabold text-slate-900 flex items-center gap-2">
-                    <MessageSquareHeart className="w-4 h-4 text-emerald-700" />
-                    <span>Góp ý phát triển Website USEATIFY</span>
-                  </h3>
-
-                  {wfNotice && (
-                    <div className="p-3 rounded-xl text-xs font-medium bg-emerald-50 text-emerald-800 border border-emerald-200">
-                      {wfNotice.text}
-                    </div>
-                  )}
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">Tên của bạn (Tùy chọn)</label>
-                    <input
-                      type="text"
-                      value={wfSender}
-                      onChange={(e) => setWfSender(e.target.value)}
-                      placeholder="Sinh viên ULIS ẩn danh"
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="block text-xs font-bold text-slate-700">
-                      Nội dung góp ý tính năng / giao diện *
-                    </label>
-                    <textarea
-                      rows={3}
-                      value={wfContent}
-                      onChange={(e) => setWfContent(e.target.value)}
-                      placeholder="Ý kiến của bạn giúp đội ngũ USEATIFY hoàn thiện hơn..."
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 text-xs"
-                    />
-                  </div>
-
-                  <button
-                    type="submit"
-                    className="w-full py-3 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs sm:text-sm font-bold cursor-pointer"
-                  >
-                    Gửi đóng góp cho đội ngũ phát triển
+                    Gửi Góp ý Homies tới Quản lý Cơ sở
                   </button>
                 </form>
               )}
@@ -4346,7 +4355,7 @@ function UseatifyMainApp() {
               </div>
 
               {currentStudent && (
-                <div className="flex items-center gap-3 bg-slate-950/40 px-4 py-3 rounded-xl border border-white/15 shrink-0">
+                <div className="flex flex-wrap items-center gap-2.5 bg-slate-950/40 px-4 py-3 rounded-xl border border-white/15 shrink-0">
                   <img
                     src={currentStudent.portraitPhoto}
                     alt={currentStudent.fullName}
@@ -4358,15 +4367,46 @@ function UseatifyMainApp() {
                       MÃ SV: {currentStudent.studentCode}
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={handleStudentExplicitLogout}
-                    className="ml-2 inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-bold cursor-pointer"
-                    title="Đăng xuất tài khoản sinh viên"
-                  >
-                    <LogOut className="w-3.5 h-3.5" />
-                    <span>Đăng xuất</span>
-                  </button>
+                  <div className="flex items-center gap-2 ml-1">
+                    <button
+                      type="button"
+                      onClick={handleStudentExplicitLogout}
+                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-white/15 cursor-pointer"
+                      title="Đăng xuất tài khoản sinh viên"
+                    >
+                      <LogOut className="w-3.5 h-3.5" />
+                      <span>Đăng xuất</span>
+                    </button>
+
+                    {!confirmDeleteSelfStudent ? (
+                      <button
+                        type="button"
+                        onClick={() => setConfirmDeleteSelfStudent(true)}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-bold cursor-pointer"
+                        title="Xóa tài khoản sinh viên khỏi cơ sở dữ liệu"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>Xóa tài khoản</span>
+                      </button>
+                    ) : (
+                      <div className="flex items-center gap-1.5 bg-rose-950/90 p-1 rounded-lg border border-rose-400/50">
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteStudentAccountFromDatabase(currentStudent.id)}
+                          className="px-2.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold cursor-pointer"
+                        >
+                          Xác nhận xóa
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteSelfStudent(false)}
+                          className="px-2 py-1.5 rounded-md bg-slate-800 text-slate-200 text-[11px] font-bold cursor-pointer"
+                        >
+                          Hủy
+                        </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>
@@ -5579,120 +5619,186 @@ function UseatifyMainApp() {
                       </div>
                     )}
 
-                    {/* STAFF SUB-TAB 3: STUDENT ACCOUNT APPROVAL (BOTH SELECTED BRANCH STAFF & MASTER ADMIN) */}
+                    {/* STAFF SUB-TAB 3: STUDENT ACCOUNT APPROVAL & LOOKUP (ALL HOMIES STAFF & ADMIN) */}
                     {staffSubTab === 'student_approvals' && (
                       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
-                        <div className="border-b border-slate-200 pb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                          <div>
+                        <div className="border-b border-slate-200 pb-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+                          <div className="space-y-1">
                             <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                              🪪 Duyệt Tài khoản Thẻ sinh viên số ({isMaster ? 'Tất cả cơ sở / Theo bộ lọc' : currentAccount.displayName})
+                              🪪 Quản lý &amp; Duyệt Tài khoản Thẻ sinh viên số
                             </h3>
-                            <p className="text-xs text-slate-600 mt-1 leading-relaxed">
-                              Trong lần đăng kí đầu tiên, sinh viên xuất trình thẻ sinh viên gốc tại quầy ra vào Homies.
-                              Staff cơ sở Homies sinh viên đang đứng hoặc Tài khoản Tổng kiểm tra đối chiếu và phê duyệt kích hoạt.
+                            <p className="text-xs text-slate-600 leading-relaxed">
+                              Danh sách tự động sắp xếp theo ngày đăng ký ({scopedStudentAccounts.length} tài khoản
+                              · Chờ duyệt: <strong>{pendingStudentAccountsCount}</strong>). Bấm vào từng sinh viên để
+                              xem chi tiết cơ sở ULIS đăng ký, ngày đăng ký và phê duyệt / xóa tài khoản.
                             </p>
                           </div>
-                          <span className="text-xs font-mono font-bold text-slate-700 shrink-0">
-                            Chờ duyệt: {pendingStudentAccountsCount} · Tổng danh sách:{' '}
-                            {scopedStudentAccounts.length}
-                          </span>
+
+                          {/* Top-Right Student Code Lookup Bar */}
+                          <div className="relative w-full sm:w-80 shrink-0">
+                            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                            <input
+                              type="text"
+                              value={studentSearchCode}
+                              onChange={(e) => setStudentSearchCode(e.target.value)}
+                              placeholder="Nhập mã sinh viên để tra cứu..."
+                              className="w-full pl-9 pr-8 py-2.5 rounded-xl bg-slate-50 border border-slate-300 text-xs font-mono font-bold text-slate-800 focus:bg-white focus:border-[#165b40] outline-none"
+                            />
+                            {studentSearchCode && (
+                              <button
+                                type="button"
+                                onClick={() => setStudentSearchCode('')}
+                                className="absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-700 cursor-pointer"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </div>
                         </div>
 
                         {scopedStudentAccounts.length === 0 ? (
                           <div className="p-8 rounded-xl bg-slate-50 border border-slate-200/80 text-center text-xs text-slate-500">
-                            Chưa có sinh viên nào gửi yêu cầu đăng ký Thẻ sinh viên số tại cơ sở này.
+                            {studentSearchCode.trim()
+                              ? `Không tìm thấy sinh viên nào có mã sinh viên chứa "${studentSearchCode.trim()}".`
+                              : 'Chưa có sinh viên nào đăng ký Thẻ sinh viên số.'}
                           </div>
                         ) : (
-                          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                          <div className="space-y-3">
                             {scopedStudentAccounts.map((stu) => {
                               const isPending = stu.status === 'pending';
+                              const isExpanded = expandedStudentId === stu.id;
                               const regBranch = branchesMap[stu.registeredBranchId || 'homies_danang'];
                               return (
                                 <div
                                   key={stu.id}
-                                  className={`p-5 rounded-2xl border space-y-4 ${
+                                  className={`rounded-2xl border transition-all overflow-hidden ${
                                     isPending
-                                      ? 'bg-amber-50/50 border-amber-300'
-                                      : 'bg-slate-50 border-slate-200'
+                                      ? 'bg-amber-50/40 border-amber-300'
+                                      : 'bg-slate-50/80 border-slate-200'
                                   }`}
                                 >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="space-y-1">
-                                      <div className="flex flex-wrap items-center gap-2">
-                                        <h4 className="text-base font-extrabold text-slate-900">
-                                          {stu.fullName}
-                                        </h4>
-                                        <span
-                                          className={`text-[11px] font-bold px-2 py-0.5 rounded ${
-                                            isPending
-                                              ? 'bg-amber-200 text-amber-950'
-                                              : 'bg-emerald-100 text-emerald-900'
-                                          }`}
-                                        >
-                                          {isPending ? 'Chờ duyệt tại quầy' : 'Đã kích hoạt'}
-                                        </span>
-                                      </div>
-                                      <div className="text-xs font-mono font-bold text-[#165b40]">
+                                  {/* COMPACT EXTERIOR: ONLY NAME & STUDENT CODE */}
+                                  <button
+                                    type="button"
+                                    onClick={() =>
+                                      setExpandedStudentId((prev) => (prev === stu.id ? null : stu.id))
+                                    }
+                                    className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left hover:bg-slate-100/70 transition-colors cursor-pointer"
+                                  >
+                                    <div className="flex flex-wrap items-center gap-3 min-w-0">
+                                      <span className="text-base font-extrabold text-slate-900">
+                                        {stu.fullName}
+                                      </span>
+                                      <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono font-bold text-[#165b40]">
                                         MÃ SV: {stu.studentCode}
-                                      </div>
-                                      <div className="text-xs text-slate-600">{stu.email}</div>
-                                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-[#165b40] mt-1">
-                                        <span>📍 Đang đăng ký tại:</span>
-                                        <span>{regBranch ? `${regBranch.emoji} ${regBranch.name}` : 'HOMIES Đa năng'}</span>
-                                      </div>
-                                      <div className="text-[11px] font-mono text-slate-500 pt-0.5">
-                                        Đăng ký lúc: {stu.createdAt}
-                                      </div>
-                                    </div>
-                                  </div>
-
-                                  {/* Portrait Photo Verification */}
-                                  <div className="bg-white p-3.5 rounded-xl border border-slate-200 flex items-center gap-4">
-                                    <img
-                                      src={stu.portraitPhoto}
-                                      alt="Ảnh thẻ chân dung"
-                                      onClick={() =>
-                                        setLightboxPhoto({
-                                          src: stu.portraitPhoto,
-                                          caption: `Ảnh thẻ chân dung • ${stu.fullName} (${stu.studentCode})`
-                                        })
-                                      }
-                                      className="w-24 h-28 object-cover rounded-xl border border-slate-300 cursor-pointer hover:opacity-90 shrink-0"
-                                    />
-                                    <div className="space-y-1.5 text-xs text-slate-600">
-                                      <div className="font-bold text-slate-800">
-                                        Ảnh thẻ chân dung sinh viên (Bấm vào ảnh để phóng to)
-                                      </div>
-                                      <p className="leading-relaxed">
-                                        Đối chiếu trực tiếp với <strong>Thẻ sinh viên gốc</strong> do sinh viên
-                                        xuất trình tại quầy ra vào Homies trong lần đăng ký đầu tiên.
-                                      </p>
-                                    </div>
-                                  </div>
-
-                                  {/* 2 Action Buttons */}
-                                  <div className="flex items-center gap-2.5 pt-1">
-                                    {isPending && (
-                                      <button
-                                        type="button"
-                                        onClick={() =>
-                                          handleMasterApproveStudentAccount(stu.id, 'approve')
-                                        }
-                                        className="flex-1 py-2.5 px-3 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                                      </span>
+                                      <span
+                                        className={`text-[11px] font-bold px-2 py-0.5 rounded ${
+                                          isPending
+                                            ? 'bg-amber-200 text-amber-950'
+                                            : 'bg-emerald-100 text-emerald-900'
+                                        }`}
                                       >
-                                        ✓ Phê duyệt &amp; Kích hoạt Thẻ sinh viên số
-                                      </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={() =>
-                                        handleMasterApproveStudentAccount(stu.id, 'delete')
-                                      }
-                                      className="py-2.5 px-3.5 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-extrabold cursor-pointer"
-                                    >
-                                      ✕ Từ chối / Xóa
-                                    </button>
-                                  </div>
+                                        {isPending ? 'Chờ duyệt' : 'Đã kích hoạt'}
+                                      </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500 shrink-0">
+                                      <span className="hidden sm:inline">
+                                        {isExpanded ? 'Thu gọn' : 'Xem chi tiết'}
+                                      </span>
+                                      {isExpanded ? (
+                                        <ChevronUp className="w-4 h-4 text-slate-700" />
+                                      ) : (
+                                        <ChevronDown className="w-4 h-4 text-slate-700" />
+                                      )}
+                                    </div>
+                                  </button>
+
+                                  {/* EXPANDED INTERIOR: REGISTERED HOMIES BRANCH, REGISTRATION DATE, PHOTO & ACTIONS */}
+                                  {isExpanded && (
+                                    <div className="px-5 pb-5 pt-3 border-t border-slate-200/80 bg-white space-y-4">
+                                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                                        <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                                          <div className="text-[11px] font-bold text-slate-500">
+                                            Đăng ký tại cơ sở ULIS:
+                                          </div>
+                                          <div className="font-extrabold text-[#165b40] mt-0.5">
+                                            {regBranch
+                                              ? `${regBranch.emoji} ${regBranch.name}`
+                                              : stu.registeredBranchName || 'HOMIES Đa năng'}
+                                          </div>
+                                        </div>
+
+                                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                          <div className="text-[11px] font-bold text-slate-500">
+                                            Ngày đăng ký:
+                                          </div>
+                                          <div className="font-mono font-bold text-slate-900 mt-0.5">
+                                            {stu.createdAt}
+                                          </div>
+                                        </div>
+
+                                        <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
+                                          <div className="text-[11px] font-bold text-slate-500">
+                                            Email sinh viên:
+                                          </div>
+                                          <div className="font-mono font-semibold text-slate-800 mt-0.5 break-all">
+                                            {stu.email}
+                                          </div>
+                                        </div>
+                                      </div>
+
+                                      {/* Portrait Photo Verification */}
+                                      <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex flex-col sm:flex-row items-center gap-4">
+                                        <img
+                                          src={stu.portraitPhoto}
+                                          alt="Ảnh thẻ chân dung"
+                                          onClick={() =>
+                                            setLightboxPhoto({
+                                              src: stu.portraitPhoto,
+                                              caption: `Ảnh thẻ chân dung • ${stu.fullName} (${stu.studentCode})`
+                                            })
+                                          }
+                                          className="w-24 h-28 object-cover rounded-xl border border-slate-300 cursor-pointer hover:opacity-90 shrink-0"
+                                        />
+                                        <div className="space-y-1.5 text-xs text-slate-600">
+                                          <div className="font-bold text-slate-800">
+                                            Ảnh thẻ chân dung sinh viên (Bấm vào ảnh để phóng to)
+                                          </div>
+                                          <p className="leading-relaxed">
+                                            Đối chiếu trực tiếp với <strong>Thẻ sinh viên gốc</strong> do sinh
+                                            viên xuất trình tại quầy ra vào Homies trong lần đăng ký đầu tiên.
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      {/* Action Buttons: Approve & Permanent Database Delete */}
+                                      <div className="flex flex-wrap items-center gap-2.5 pt-1">
+                                        {isPending && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleMasterApproveStudentAccount(stu.id, 'approve')
+                                            }
+                                            className="flex-1 py-2.5 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                                          >
+                                            ✓ Phê duyệt &amp; Kích hoạt Thẻ sinh viên số
+                                          </button>
+                                        )}
+                                        <button
+                                          type="button"
+                                          onClick={() =>
+                                            handleMasterApproveStudentAccount(stu.id, 'delete')
+                                          }
+                                          className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-extrabold cursor-pointer"
+                                        >
+                                          <Trash2 className="w-3.5 h-3.5" />
+                                          <span>Xóa tài khoản khỏi CSDL</span>
+                                        </button>
+                                      </div>
+                                    </div>
+                                  )}
                                 </div>
                               );
                             })}
@@ -5772,56 +5878,223 @@ function UseatifyMainApp() {
                       </div>
                     )}
 
-                    {/* STAFF SUB-TAB 5: INTERNAL SUGGESTION INBOX */}
+                    {/* STAFF SUB-TAB 5: GÓP Ý HOMIES WORKFLOW (CHỜ DUYỆT -> ĐƯỢC GHI NHẬN -> ĐÃ THỰC HIỆN) */}
                     {staffSubTab === 'suggestions' && (
-                      <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
-                        <h3 className="text-lg font-extrabold text-slate-900">
-                          📥 Hòm thư Góp ý nội bộ ({scopedSuggestions.length})
-                        </h3>
-                        {scopedSuggestions.length === 0 ? (
-                          <div className="p-8 rounded-xl bg-slate-50 text-center text-xs text-slate-500">
-                            Hòm thư góp ý hiện đang trống.
+                      <div className="space-y-6">
+                        {/* SECTION 1: GÓP Ý MỚI CHỜ DUYỆT */}
+                        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 className="text-lg font-extrabold text-slate-900">
+                              📥 Góp ý Homies chờ duyệt (
+                              {
+                                scopedSuggestions.filter(
+                                  (s) => !s.status || s.status === 'unread' || s.status === 'pending'
+                                ).length
+                              }
+                              )
+                            </h3>
                           </div>
-                        ) : (
-                          <div className="space-y-3">
-                            {scopedSuggestions.map((sug) => (
-                              <div
-                                key={sug.id}
-                                className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
-                              >
-                                <div className="space-y-1">
-                                  <div className="flex items-center gap-2 text-xs">
-                                    <span className="font-bold text-slate-900">{sug.sender}</span>
-                                    <span>·</span>
-                                    <span className="font-semibold text-emerald-800">
-                                      {branchesMap[sug.branchId]?.name}
-                                    </span>
-                                    <span>·</span>
-                                    <span className="text-slate-600">{sug.category}</span>
-                                  </div>
-                                  <p className="text-xs text-slate-700">{sug.content}</p>
-                                </div>
 
-                                <div className="flex items-center gap-2 shrink-0">
-                                  <button
-                                    type="button"
-                                    onClick={() => handleToggleSuggestionStatus(sug.id)}
-                                    className="px-3 py-1.5 rounded-lg bg-slate-200 hover:bg-slate-300 text-xs font-bold text-slate-800 cursor-pointer"
+                          {scopedSuggestions.filter(
+                            (s) => !s.status || s.status === 'unread' || s.status === 'pending'
+                          ).length === 0 ? (
+                            <div className="p-6 rounded-xl bg-slate-50 text-center text-xs text-slate-500">
+                              Hiện không có góp ý mới nào đang chờ duyệt.
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {scopedSuggestions
+                                .filter(
+                                  (s) => !s.status || s.status === 'unread' || s.status === 'pending'
+                                )
+                                .map((sug) => (
+                                  <div
+                                    key={sug.id}
+                                    className="p-4 rounded-xl bg-amber-50/50 border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                                   >
-                                    {sug.status === 'unread' ? 'Đánh dấu Đã xử lý' : 'Đã xử lý ✓'}
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => handleDeleteSuggestion(sug.id)}
-                                    className="p-1.5 rounded-lg bg-rose-100 text-rose-700 cursor-pointer"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              </div>
-                            ))}
+                                    <div className="space-y-1.5">
+                                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                                        <span className="font-bold text-slate-900">{sug.sender}</span>
+                                        <span>·</span>
+                                        <span className="font-semibold text-emerald-800">
+                                          {branchesMap[sug.branchId]?.name}
+                                        </span>
+                                        <span>·</span>
+                                        <span className="text-slate-600">{sug.category}</span>
+                                        <span className="text-[11px] font-mono text-slate-400">
+                                          ({sug.createdAt})
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-slate-800">{sug.content}</p>
+                                      {sug.photo && (
+                                        <img
+                                          src={sug.photo}
+                                          alt="Ảnh góp ý"
+                                          onClick={() =>
+                                            setLightboxPhoto({
+                                              src: sug.photo,
+                                              caption: `Ảnh góp ý • ${branchesMap[sug.branchId]?.name}`
+                                            })
+                                          }
+                                          className="h-24 rounded-lg object-cover border border-slate-300 cursor-pointer mt-1"
+                                        />
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleApproveSuggestionToAcknowledged(sug.id)}
+                                        className="px-3.5 py-2 rounded-lg bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer"
+                                      >
+                                        ✓ Phê duyệt
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteSuggestion(sug.id)}
+                                        className="p-2 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 cursor-pointer"
+                                        title="Xóa góp ý"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* SECTION 2: GÓP Ý ĐƯỢC GHI NHẬN */}
+                        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 className="text-lg font-extrabold text-[#165b40]">
+                              📌 Góp ý được ghi nhận (
+                              {
+                                scopedSuggestions.filter(
+                                  (s) => s.status === 'acknowledged' || s.status === 'resolved'
+                                ).length
+                              }
+                              )
+                            </h3>
                           </div>
-                        )}
+
+                          {scopedSuggestions.filter(
+                            (s) => s.status === 'acknowledged' || s.status === 'resolved'
+                          ).length === 0 ? (
+                            <div className="p-6 rounded-xl bg-slate-50 text-center text-xs text-slate-500">
+                              Chưa có góp ý nào trong danh sách được ghi nhận.
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {scopedSuggestions
+                                .filter((s) => s.status === 'acknowledged' || s.status === 'resolved')
+                                .map((sug) => (
+                                  <div
+                                    key={sug.id}
+                                    className="p-4 rounded-xl bg-emerald-50/40 border border-emerald-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                  >
+                                    <div className="space-y-1.5">
+                                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                                        <span className="font-bold text-slate-900">{sug.sender}</span>
+                                        <span>·</span>
+                                        <span className="font-semibold text-emerald-800">
+                                          {branchesMap[sug.branchId]?.name}
+                                        </span>
+                                        <span>·</span>
+                                        <span className="text-slate-600">{sug.category}</span>
+                                      </div>
+                                      <p className="text-xs text-slate-800">{sug.content}</p>
+                                      {sug.photo && (
+                                        <img
+                                          src={sug.photo}
+                                          alt="Ảnh góp ý"
+                                          onClick={() =>
+                                            setLightboxPhoto({
+                                              src: sug.photo,
+                                              caption: `Ảnh góp ý • ${branchesMap[sug.branchId]?.name}`
+                                            })
+                                          }
+                                          className="h-24 rounded-lg object-cover border border-slate-300 cursor-pointer mt-1"
+                                        />
+                                      )}
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleMarkSuggestionCompleted(sug.id)}
+                                        className="px-3 py-1.5 rounded-lg bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer"
+                                      >
+                                        ✓ Đã thực hiện
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteSuggestion(sug.id)}
+                                        className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 cursor-pointer"
+                                        title="Xóa góp ý"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
+
+                        {/* SECTION 3: ĐÃ THỰC HIỆN */}
+                        <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
+                          <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                            <h3 className="text-lg font-extrabold text-slate-800">
+                              ✅ Đã thực hiện (
+                              {scopedSuggestions.filter((s) => s.status === 'completed').length})
+                            </h3>
+                          </div>
+
+                          {scopedSuggestions.filter((s) => s.status === 'completed').length === 0 ? (
+                            <div className="p-6 rounded-xl bg-slate-50 text-center text-xs text-slate-500">
+                              Chưa có góp ý nào trong mục Đã thực hiện.
+                            </div>
+                          ) : (
+                            <div className="space-y-3">
+                              {scopedSuggestions
+                                .filter((s) => s.status === 'completed')
+                                .map((sug) => (
+                                  <div
+                                    key={sug.id}
+                                    className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                  >
+                                    <div className="space-y-1">
+                                      <div className="flex flex-wrap items-center gap-2 text-xs">
+                                        <span className="font-bold text-slate-900">{sug.sender}</span>
+                                        <span>·</span>
+                                        <span className="font-semibold text-emerald-800">
+                                          {branchesMap[sug.branchId]?.name}
+                                        </span>
+                                        <span>·</span>
+                                        <span className="text-slate-600">{sug.category}</span>
+                                        <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-900 text-[11px] font-bold">
+                                          Đã thực hiện ✓
+                                        </span>
+                                      </div>
+                                      <p className="text-xs text-slate-700">{sug.content}</p>
+                                    </div>
+
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleDeleteSuggestion(sug.id)}
+                                        className="p-1.5 rounded-lg bg-rose-100 hover:bg-rose-200 text-rose-700 cursor-pointer"
+                                        title="Xóa góp ý"
+                                      >
+                                        <Trash2 className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </div>
+                                ))}
+                            </div>
+                          )}
+                        </div>
                       </div>
                     )}
 
