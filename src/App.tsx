@@ -1911,14 +1911,23 @@ function UseatifyMainApp() {
       return false;
     });
 
-    // 2. Background lifecycle check (never delete currently logged in student session automatically)
+    // 2. Background lifecycle check (silent 3-day auto-delete for unapproved accounts & 4-year lifecycle)
+    const THREE_DAYS_MS = 3 * 24 * 60 * 60 * 1000;
     const expiredAccounts = (cur.studentAccounts || []).filter((acc) => {
-      if (!acc || acc.id === loggedInStudentId) return false;
-      const created = acc.createdAtMs || acc.createdAt || now;
-      const expiry =
-        acc.accountExpiresAt ||
-        acc.expiresAtMs ||
-        (typeof created === 'number' ? created + FOUR_YEARS_MS : now + FOUR_YEARS_MS);
+      if (!acc) return false;
+      const createdMs =
+        typeof acc.createdAtMs === 'number' && acc.createdAtMs > 0
+          ? acc.createdAtMs
+          : typeof acc.createdAt === 'number' && acc.createdAt > 0
+          ? acc.createdAt
+          : now;
+
+      if (acc.status === 'pending' && now - createdMs >= THREE_DAYS_MS) {
+        return true;
+      }
+
+      if (acc.id === loggedInStudentId) return false;
+      const expiry = acc.accountExpiresAt || acc.expiresAtMs || createdMs + FOUR_YEARS_MS;
       return now >= expiry;
     });
 
@@ -1955,6 +1964,14 @@ function UseatifyMainApp() {
       if (expiredRequests.length > 0) setEntryRequests(nextEntryRequests);
       if (expiredAccounts.length > 0) {
         setStudentAccounts(nextStudentAccounts);
+        if (loggedInStudentId && newlyDeletedIds.includes(loggedInStudentId)) {
+          setLoggedInStudentId(null);
+          setPersistedStudentBackup(null);
+          try {
+            localStorage.removeItem('useatify_active_student_id');
+            localStorage.removeItem('useatify_active_student_profile_v6');
+          } catch {}
+        }
       }
       if (expiredCompletedSuggestions.length > 0) {
         setSuggestions(nextSuggestions);
@@ -5324,8 +5341,8 @@ function UseatifyMainApp() {
                                 key={branch.id}
                                 className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-5"
                               >
-                                {/* Card Header: Branch Name + Status Pill on Top Row, Full-Width Address & Updated Time Below */}
-                                <div className="space-y-2.5 pb-3 border-b border-slate-100">
+                                {/* Card Header: Branch Name + Status Pill on Top Row, Aligned Single-Line Address & Updated Time Below */}
+                                <div className="space-y-2.5 pb-3.5 border-b border-slate-100">
                                   <div className="flex items-center justify-between gap-3">
                                     <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2 tracking-tight min-w-0">
                                       <span className="shrink-0">{branch.emoji}</span>
@@ -5340,13 +5357,16 @@ function UseatifyMainApp() {
                                     </span>
                                   </div>
 
-                                  <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600">
-                                    <span className="inline-flex items-center gap-1.5 font-medium text-slate-600">
+                                  <div className="flex items-center justify-between gap-2 text-xs text-slate-600">
+                                    <span
+                                      className="inline-flex items-center gap-1.5 font-medium text-slate-600 min-w-0"
+                                      title={branch.address}
+                                    >
                                       <MapPin className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
-                                      <span>{branch.address}</span>
+                                      <span className="truncate">{branch.address}</span>
                                     </span>
 
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-lg bg-slate-100 text-slate-600 font-medium whitespace-nowrap">
+                                    <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-100 text-slate-600 text-[11px] sm:text-xs font-medium whitespace-nowrap shrink-0">
                                       <Clock className="w-3 h-3 text-slate-500 shrink-0" />
                                       <span>
                                         Cập nhật:{' '}
