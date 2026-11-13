@@ -47,7 +47,10 @@ import {
   Timer,
   Ticket,
   Upload,
-  SwitchCamera
+  SwitchCamera,
+  Mail,
+  KeyRound,
+  Send
 } from 'lucide-react';
 
 declare global {
@@ -957,15 +960,15 @@ function BranchVisualBanner({
         </svg>
       )}
 
-      <div className="relative z-10 flex items-center justify-between p-3.5">
-        <div className="flex items-center gap-1.5">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-bold bg-slate-900/80 text-white backdrop-blur-md border border-white/15">
+      <div className="relative z-10 flex flex-wrap items-center justify-between gap-1.5 p-3 sm:p-3.5">
+        <div className="flex flex-wrap items-center gap-1.5">
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold bg-slate-900/80 text-white backdrop-blur-md border border-white/15 whitespace-nowrap">
             <span>{branch.emoji}</span>
             <span>Khu {branch.code}</span>
           </span>
           {reviewCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-1 rounded-md text-xs font-bold bg-amber-400/95 text-slate-950 shadow-xs">
-              <Star className="w-3 h-3 fill-slate-950" />
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold bg-amber-400/95 text-slate-950 shadow-xs whitespace-nowrap">
+              <Star className="w-3 h-3 fill-slate-950 shrink-0" />
               <span className="font-mono">{avgRating}</span>
               <span className="text-[10px] font-semibold opacity-80">({reviewCount})</span>
             </span>
@@ -973,26 +976,26 @@ function BranchVisualBanner({
         </div>
 
         {isBestChoice && (
-          <div className="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-[11px] font-extrabold bg-emerald-600 text-white shadow-md border border-white/30">
-            <Sparkles className="w-3 h-3" />
+          <div className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-[11px] font-extrabold bg-emerald-600 text-white shadow-md border border-white/30 whitespace-nowrap">
+            <Sparkles className="w-3 h-3 shrink-0" />
             <span>Nhiều chỗ trống nhất</span>
           </div>
         )}
       </div>
 
-      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/65 to-transparent p-3.5 pt-8 flex items-end justify-between">
-        <div>
-          <h3 className="text-lg sm:text-xl font-extrabold text-white tracking-tight flex items-center gap-2">
-            <span>{branch.name}</span>
-            <span className="text-[11px] font-mono font-bold text-emerald-300 bg-white/15 px-2 py-0.5 rounded-md">
+      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/70 to-transparent p-3 sm:p-3.5 pt-8 flex items-end justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <h3 className="text-base sm:text-xl font-extrabold text-white tracking-tight flex flex-wrap items-center gap-1.5 sm:gap-2">
+            <span className="truncate">{branch.name}</span>
+            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 bg-white/15 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
               {branch.total} chỗ
             </span>
           </h3>
           <p className="text-[11px] text-slate-300 line-clamp-1 mt-0.5">{branch.subtitle}</p>
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] font-mono font-medium text-slate-200 bg-black/45 backdrop-blur-sm px-2 py-1 rounded-md border border-white/10 shrink-0">
-          <Clock className="w-3 h-3 text-sky-400" />
+        <div className="flex items-center gap-1 text-[11px] font-mono font-medium text-slate-200 bg-black/45 backdrop-blur-sm px-2 py-1 rounded-md border border-white/10 shrink-0 whitespace-nowrap">
+          <Clock className="w-3 h-3 text-sky-400 shrink-0" />
           <span>{branch.updatedAt}</span>
         </div>
       </div>
@@ -1163,7 +1166,8 @@ function UseatifyMainApp() {
   // ==========================================================================
   // STUDENT DIGITAL HOMIES PASS STATE (PERSISTENT SESSION - ONLY LOGOUT ON CLICK)
   // ==========================================================================
-  const [studentAuthMode, setStudentAuthMode] = useState<'login' | 'register'>('login');
+  // Student Main Auth Tab: 'login' | 'register' | 'forgot_password'
+  const [studentAuthMode, setStudentAuthMode] = useState<'login' | 'register' | 'forgot_password'>('login');
   const [loggedInStudentId, setLoggedInStudentId] = useState<string | null>(() => {
     try {
       const id = localStorage.getItem('useatify_active_student_id');
@@ -1192,14 +1196,39 @@ function UseatifyMainApp() {
   const [stuLoginPassword, setStuLoginPassword] = useState('');
   const [stuLoginError, setStuLoginError] = useState('');
 
-  // Student Registration Form
+  // Student Registration Form (With Confirm Password)
   const [stuRegEmail, setStuRegEmail] = useState('');
   const [stuRegPassword, setStuRegPassword] = useState('');
+  const [stuRegConfirmPassword, setStuRegConfirmPassword] = useState('');
   const [stuRegFullName, setStuRegFullName] = useState('');
   const [stuRegCode, setStuRegCode] = useState('');
   const [stuRegBranchId, setStuRegBranchId] = useState('homies_danang');
   const [stuRegPortraitPhoto, setStuRegPortraitPhoto] = useState<string | null>(null);
   const [stuRegNotice, setStuRegNotice] = useState<{ type: string; text: string } | null>(null);
+
+  // Inline Forgot Password Flow (Request Staff/Admin Approval -> Smooth Transition to New Password)
+  const [forgotPassQuery, setForgotPassQuery] = useState<string>(() => {
+    try {
+      return localStorage.getItem('useatify_forgot_pass_query') || '';
+    } catch {
+      return '';
+    }
+  });
+  const [forgotPassNewPassword, setForgotPassNewPassword] = useState('');
+  const [forgotPassConfirmPassword, setForgotPassConfirmPassword] = useState('');
+  const [forgotPassNotice, setForgotPassNotice] = useState<{ type: string; text: string } | null>(
+    null
+  );
+
+  // Inline Student Change Password (Old Password, New Password, Confirm New Password)
+  const [changePassOldInput, setChangePassOldInput] = useState('');
+  const [changePassNewInput, setChangePassNewInput] = useState('');
+  const [changePassConfirmInput, setChangePassConfirmInput] = useState('');
+  const [changePassModalNotice, setChangePassModalNotice] = useState<{
+    type: string;
+    text: string;
+  } | null>(null);
+  const [desktopSecurityOpen, setDesktopSecurityOpen] = useState(false);
 
   // Student Temporary Entry Request Selection
   const [stuSelectedBranchForEntry, setStuSelectedBranchForEntry] = useState('homies_danang');
@@ -1588,6 +1617,18 @@ function UseatifyMainApp() {
           });
         }
 
+        // 2b. Merge SiteConfig (including emailScriptUrl for real student OTP emails)
+        if (cloud.siteConfig && typeof cloud.siteConfig === 'object') {
+          setSiteConfig((prev: any) => {
+            const pMs = prev?.updatedAtMs || 0;
+            const cMs = cloud.siteConfig?.updatedAtMs || 0;
+            if (cMs > pMs || (cloud.siteConfig.emailScriptUrl && !prev?.emailScriptUrl)) {
+              return { ...INITIAL_SITE_CONFIG, ...prev, ...cloud.siteConfig };
+            }
+            return prev;
+          });
+        }
+
         // 3. Merge Reviews & Suggestions
         if (cloud.reviews) {
           setReviews((prev) => {
@@ -1948,6 +1989,27 @@ function UseatifyMainApp() {
     return studentAccounts.filter((s) => s && s.status === 'pending').length;
   }, [studentAccounts]);
 
+  // Password Reset Requests visible to Staff cơ sở and Master Admin
+  const pendingPasswordResetStudents = useMemo(() => {
+    if (!currentAccount) return [];
+    return studentAccounts.filter(
+      (s) => s && s.passwordResetStatus === 'pending'
+    );
+  }, [studentAccounts, currentAccount]);
+
+  // Matched student account for the centered Forgot Password pop-up modal
+  const forgotPassTargetStudent = useMemo(() => {
+    const q = forgotPassQuery.trim().toLowerCase();
+    if (!q) return null;
+    return (
+      studentAccounts.find(
+        (s) =>
+          s &&
+          (s.email?.toLowerCase() === q || String(s.studentCode || '').toLowerCase() === q)
+      ) || null
+    );
+  }, [studentAccounts, forgotPassQuery]);
+
   // Scoped Entry Requests for current Staff's branch(es)
   const scopedEntryRequests = useMemo(() => {
     if (!currentAccount) return [];
@@ -1998,6 +2060,8 @@ function UseatifyMainApp() {
 
       setContactFormName(currentAccount.contactName || currentAccount.displayName || '');
       setContactFormPhone(currentAccount.contactPhone || '');
+      setContactFormName(currentAccount.contactName || currentAccount.displayName || '');
+      setContactFormPhone(currentAccount.contactPhone || '');
       setContactFormEmail(currentAccount.contactEmail || '');
       setContactFormNote(currentAccount.contactNote || '');
       setContactSaveNotice(null);
@@ -2021,7 +2085,7 @@ function UseatifyMainApp() {
         text: err.message || 'Không thể xử lý ảnh chân dung.'
       });
     } finally {
-      if (e.target) e.target.value = '';
+      e.target.value = '';
     }
   };
 
@@ -2034,7 +2098,7 @@ function UseatifyMainApp() {
     if (!isValidUlisStudentEmail(cleanEmail)) {
       setStuRegNotice({
         type: 'error',
-        text: 'Hệ thống chỉ nhận Email sinh viên ULIS có 4 số đầu là 2X04 (trong đó X là số năm đăng ký) và đuôi @vnu.edu.vn (Ví dụ: 23040123@vnu.edu.vn, 24040123@vnu.edu.vn).'
+        text: 'Hệ thống chỉ nhận Email sinh viên ULIS có 4 số đầu là 2X04 (trong đó X là số năm đăng ký) và đuôi @vnu.edu.vn.'
       });
       return;
     }
@@ -2042,7 +2106,7 @@ function UseatifyMainApp() {
     if (!/^2\d04\d{2,6}$/.test(cleanCode)) {
       setStuRegNotice({
         type: 'error',
-        text: 'Mã số sinh viên (MÃ SV) phải bắt đầu bằng 4 số 2X04 (trong đó X là số năm đăng ký, ví dụ: 23040123).'
+        text: 'Mã số sinh viên phải bắt đầu bằng 4 số 2X04 (trong đó X là số năm đăng ký).'
       });
       return;
     }
@@ -2065,10 +2129,18 @@ function UseatifyMainApp() {
       return;
     }
 
+    if (stuRegPassword !== stuRegConfirmPassword) {
+      setStuRegNotice({
+        type: 'error',
+        text: 'Xác nhận mật khẩu KHÔNG KHỚP với mật khẩu đã nhập! Vui lòng nhập đúng mật khẩu xác nhận.'
+      });
+      return;
+    }
+
     if (!cleanName || !cleanCode) {
       setStuRegNotice({
         type: 'error',
-        text: 'Vui lòng nhập đầy đủ Họ tên và Mã số sinh viên (MÃ SV).'
+        text: 'Vui lòng nhập đầy đủ Họ tên và Mã số sinh viên.'
       });
       return;
     }
@@ -2076,7 +2148,7 @@ function UseatifyMainApp() {
     if (!stuRegBranchId || !branchesMap[stuRegBranchId]) {
       setStuRegNotice({
         type: 'error',
-        text: 'Vui lòng chọn cơ sở Homies bạn đang đứng để Staff tại quầy phê duyệt!'
+        text: 'Vui lòng chọn cơ sở Homies bạn đang đứng để nhân viên tại quầy phê duyệt!'
       });
       return;
     }
@@ -2084,7 +2156,7 @@ function UseatifyMainApp() {
     if (!stuRegPortraitPhoto) {
       setStuRegNotice({
         type: 'error',
-        text: 'Vui lòng chụp hoặc tải lên Ảnh thẻ chân dung của sinh viên.'
+        text: 'Vui lòng chụp hoặc tải lên Ảnh cá nhân của sinh viên.'
       });
       return;
     }
@@ -2115,6 +2187,7 @@ function UseatifyMainApp() {
       barcodeValue: cleanCode,
       portraitPhoto: stuRegPortraitPhoto,
       status: 'pending',
+      passwordResetStatus: 'none',
       createdAt: getCurrentDateTimeStr(),
       createdAtMs: nowMs,
       accountExpiresAt,
@@ -2130,6 +2203,7 @@ function UseatifyMainApp() {
     setStudentAccounts(nextStudentAccounts);
     setPersistedStudentBackup(newStudentAccount);
     setLoggedInStudentId(newStuId);
+    setStuRegConfirmPassword('');
     try {
       localStorage.setItem('useatify_active_student_id', newStuId);
       localStorage.setItem('useatify_active_student_profile_v6', JSON.stringify(newStudentAccount));
@@ -2137,7 +2211,7 @@ function UseatifyMainApp() {
     await syncAllChannels({ studentAccounts: nextStudentAccounts });
 
     showToast(
-      `Đã gửi hồ sơ đăng ký Thẻ sinh viên số tới Staff ${branchesMap[stuRegBranchId]?.name} & Tài khoản Tổng để phê duyệt!`
+      `Đã gửi hồ sơ đăng ký Thẻ sinh viên số tới ${branchesMap[stuRegBranchId]?.name} để phê duyệt!`
     );
   };
 
@@ -2147,7 +2221,7 @@ function UseatifyMainApp() {
     const found = studentAccounts.find((s) => s && s.email?.toLowerCase() === cleanEmail);
 
     if (!found || found.password !== stuLoginPassword) {
-      setStuLoginError('Email sinh viên (2X04...@vnu.edu.vn) hoặc mật khẩu không chính xác!');
+      setStuLoginError('Email sinh viên (@vnu.edu.vn) hoặc mật khẩu không chính xác!');
       return;
     }
 
@@ -2161,6 +2235,217 @@ function UseatifyMainApp() {
     setStuLoginPassword('');
     setStuLoginError('');
     showToast(`Xin chào sinh viên ${found.fullName}!`);
+  };
+
+  // Switch to Inline Forgot Password View
+  const openForgotPasswordModal = () => {
+    const initialQ = stuLoginEmail.trim() || stuRegEmail.trim() || forgotPassQuery.trim();
+    if (initialQ) {
+      setForgotPassQuery(initialQ);
+      try {
+        localStorage.setItem('useatify_forgot_pass_query', initialQ);
+      } catch {}
+    }
+    setForgotPassNewPassword('');
+    setForgotPassConfirmPassword('');
+    setForgotPassNotice(null);
+    setStudentAuthMode('forgot_password');
+  };
+
+  // Step 1 in Forgot Password: Student clicks "Xin cấp lại mật khẩu" -> Notify Staff & Admin
+  const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const q = forgotPassQuery.trim().toLowerCase();
+    if (!q) {
+      setForgotPassNotice({
+        type: 'error',
+        text: 'Vui lòng nhập Email sinh viên (@vnu.edu.vn) hoặc Mã số sinh viên của bạn!'
+      });
+      return;
+    }
+
+    const found = studentAccounts.find(
+      (s) =>
+        s &&
+        (s.email?.toLowerCase() === q || String(s.studentCode || '').toLowerCase() === q)
+    );
+
+    if (!found) {
+      setForgotPassNotice({
+        type: 'error',
+        text: 'Không tìm thấy tài khoản Thẻ Sinh Viên Số nào khớp với thông tin đã nhập!'
+      });
+      return;
+    }
+
+    try {
+      localStorage.setItem('useatify_forgot_pass_query', q);
+    } catch {}
+
+    const nowMs = Date.now();
+    const updatedStu = {
+      ...found,
+      passwordResetStatus: 'pending',
+      passwordResetRequestedAt: getCurrentDateTimeStr(),
+      passwordResetRequestedAtMs: nowMs,
+      updatedAtMs: nowMs
+    };
+
+    const nextAccounts = studentAccounts.map((s) => (s && s.id === found.id ? updatedStu : s));
+    setStudentAccounts(nextAccounts);
+    await syncAllChannels({ studentAccounts: nextAccounts });
+
+    setForgotPassNotice({
+      type: 'success',
+      text: 'Đã gửi yêu cầu xin cấp lại mật khẩu! Vui lòng đợi nhân viên tại quầy hoặc Admin chấp thuận.'
+    });
+    showToast('Đã gửi yêu cầu xin cấp lại mật khẩu tới Nhân viên & Admin!');
+  };
+
+  // Step 2 in Forgot Password: After Staff/Admin approves -> Student enters "Mật khẩu mới" & "Xác thực lại mật khẩu" -> clicks "Ghi nhận"
+  const handleConfirmApprovedPasswordReset = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!forgotPassTargetStudent || forgotPassTargetStudent.passwordResetStatus !== 'approved') {
+      setForgotPassNotice({
+        type: 'error',
+        text: 'Yêu cầu của bạn chưa được phê duyệt. Vui lòng chờ nhân viên tại quầy chấp thuận!'
+      });
+      return;
+    }
+
+    if (forgotPassNewPassword.length < 6) {
+      setForgotPassNotice({
+        type: 'error',
+        text: 'Mật khẩu mới phải có tối thiểu 6 ký tự!'
+      });
+      return;
+    }
+
+    if (forgotPassNewPassword !== forgotPassConfirmPassword) {
+      setForgotPassNotice({
+        type: 'error',
+        text: 'Xác thực lại mật khẩu không khớp với mật khẩu mới!'
+      });
+      return;
+    }
+
+    const nowMs = Date.now();
+    const updatedStu = {
+      ...forgotPassTargetStudent,
+      password: forgotPassNewPassword,
+      passwordResetStatus: 'none',
+      updatedAtMs: nowMs
+    };
+
+    const nextAccounts = studentAccounts.map((s) =>
+      s && s.id === forgotPassTargetStudent.id ? updatedStu : s
+    );
+
+    setStudentAccounts(nextAccounts);
+    if (loggedInStudentId === updatedStu.id) {
+      setPersistedStudentBackup(updatedStu);
+      try {
+        localStorage.setItem('useatify_active_student_profile_v6', JSON.stringify(updatedStu));
+      } catch {}
+    }
+    await syncAllChannels({ studentAccounts: nextAccounts });
+
+    setStuLoginEmail(updatedStu.email);
+    setForgotPassNewPassword('');
+    setForgotPassConfirmPassword('');
+    setForgotPassNotice(null);
+    setStudentAuthMode('login');
+    try {
+      localStorage.removeItem('useatify_forgot_pass_query');
+    } catch {}
+    showToast('Đã thay đổi mật khẩu thành công! Bạn có thể đăng nhập bằng mật khẩu mới.');
+  };
+
+  // Staff / Admin approves or rejects student's password reset request
+  const handleStaffApprovePasswordReset = async (
+    studentId: string,
+    decision: 'approve' | 'reject'
+  ) => {
+    const target = studentAccounts.find((s) => s && s.id === studentId);
+    if (!target || !currentAccount) return;
+
+    const nowMs = Date.now();
+    const updatedStu = {
+      ...target,
+      passwordResetStatus: decision === 'approve' ? 'approved' : 'none',
+      passwordResetApprovedBy: currentAccount.displayName,
+      passwordResetApprovedAt: getCurrentDateTimeStr(),
+      updatedAtMs: nowMs
+    };
+
+    const nextAccounts = studentAccounts.map((s) => (s && s.id === studentId ? updatedStu : s));
+    setStudentAccounts(nextAccounts);
+    await syncAllChannels({ studentAccounts: nextAccounts });
+
+    if (decision === 'approve') {
+      showToast(
+        `Đã chấp thuận cấp lại mật khẩu cho SV ${target.fullName} (${target.studentCode})!`
+      );
+    } else {
+      showToast(`Đã hủy yêu cầu cấp lại mật khẩu của SV ${target.fullName}.`);
+    }
+  };
+
+  // Submit Inline Change Password Form (Old Password, New Password, Confirm Password)
+  const handlePopupChangeStudentPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentStudent) return;
+
+    if (changePassOldInput !== currentStudent.password) {
+      setChangePassModalNotice({
+        type: 'error',
+        text: 'Mật khẩu cũ không chính xác! Vui lòng kiểm tra lại.'
+      });
+      return;
+    }
+
+    if (changePassNewInput.length < 6) {
+      setChangePassModalNotice({
+        type: 'error',
+        text: 'Mật khẩu mới phải có tối thiểu 6 ký tự.'
+      });
+      return;
+    }
+
+    if (changePassNewInput !== changePassConfirmInput) {
+      setChangePassModalNotice({
+        type: 'error',
+        text: 'Nhập lại mật khẩu mới không khớp! Vui lòng kiểm tra lại.'
+      });
+      return;
+    }
+
+    const nowMs = Date.now();
+    const updatedStu = {
+      ...currentStudent,
+      password: changePassNewInput,
+      updatedAtMs: nowMs
+    };
+
+    const nextAccounts = studentAccounts.map((s) =>
+      s && s.id === currentStudent.id ? updatedStu : s
+    );
+
+    setStudentAccounts(nextAccounts);
+    setPersistedStudentBackup(updatedStu);
+    try {
+      localStorage.setItem('useatify_active_student_profile_v6', JSON.stringify(updatedStu));
+    } catch {}
+    await syncAllChannels({ studentAccounts: nextAccounts });
+
+    setChangePassOldInput('');
+    setChangePassNewInput('');
+    setChangePassConfirmInput('');
+    setChangePassModalNotice({
+      type: 'success',
+      text: 'Đã đổi mật khẩu Thẻ Sinh Viên Số thành công!'
+    });
+    showToast('Đã đổi mật khẩu Thẻ Sinh Viên Số thành công!');
   };
 
   // Student requests temporary entry pass for a specific Homies branch (2-Hour TTL & Cross-Branch Warning)
@@ -2920,7 +3205,6 @@ function UseatifyMainApp() {
               src={lightboxPhoto.src}
               alt={lightboxPhoto.caption}
               referrerPolicy="no-referrer"
-              className="w-full max-h-[75vh] object-contain bg-black"
             />
           </div>
         </div>
@@ -2930,16 +3214,16 @@ function UseatifyMainApp() {
           FLOATING TOAST NOTIFICATION
       ==================================================================== */}
       {toastMessage && (
-        <div className="fixed top-20 right-5 z-50 max-w-sm">
+        <div className="fixed top-20 right-3 left-3 sm:left-auto sm:right-5 z-50 sm:max-w-sm">
           <div
-            className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-sm font-semibold ${
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-xs sm:text-sm font-semibold ${
               toastMessage.type === 'error'
                 ? 'bg-rose-950 text-rose-100 border-rose-700'
                 : 'bg-slate-900 text-white border-slate-700'
             }`}
           >
             <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
-            <span>{toastMessage.msg}</span>
+            <span className="leading-snug">{toastMessage.msg}</span>
           </div>
         </div>
       )}
@@ -3134,27 +3418,35 @@ function UseatifyMainApp() {
                 </div>
 
                 {/* Campus Total KPI Strip */}
-                <div className="grid grid-cols-3 gap-3 sm:gap-4 bg-slate-950/45 backdrop-blur-xs p-4 rounded-xl border border-white/10 shrink-0">
-                  <div className="text-center px-2">
-                    <div className="text-[11px] text-emerald-200/80 font-medium">Tổng sức chứa</div>
-                    <div className="text-2xl sm:text-3xl font-mono font-extrabold text-white mt-0.5">
+                <div className="grid grid-cols-3 gap-2 sm:gap-4 bg-slate-950/45 backdrop-blur-xs p-3 sm:p-4 rounded-xl border border-white/10 shrink-0">
+                  <div className="text-center px-1 sm:px-2">
+                    <div className="text-[10px] sm:text-[11px] text-emerald-200/80 font-medium whitespace-nowrap">
+                      Tổng sức chứa
+                    </div>
+                    <div className="text-xl sm:text-3xl font-mono font-extrabold text-white mt-0.5">
                       {campusTotals.totalSeats}
                     </div>
-                    <div className="text-[10px] text-slate-300">4 cơ sở ULIS</div>
+                    <div className="text-[10px] text-slate-300 whitespace-nowrap">4 cơ sở ULIS</div>
                   </div>
-                  <div className="text-center px-2 border-x border-white/10">
-                    <div className="text-[11px] text-amber-200/80 font-medium">Đang sử dụng</div>
-                    <div className="text-2xl sm:text-3xl font-mono font-extrabold text-amber-300 mt-0.5">
+                  <div className="text-center px-1 sm:px-2 border-x border-white/10">
+                    <div className="text-[10px] sm:text-[11px] text-amber-200/80 font-medium whitespace-nowrap">
+                      Đang sử dụng
+                    </div>
+                    <div className="text-xl sm:text-3xl font-mono font-extrabold text-amber-300 mt-0.5">
                       {campusTotals.totalUsed}
                     </div>
-                    <div className="text-[10px] text-slate-300">chỗ đang ngồi</div>
+                    <div className="text-[10px] text-slate-300 whitespace-nowrap">chỗ đang ngồi</div>
                   </div>
-                  <div className="text-center px-2">
-                    <div className="text-[11px] text-emerald-300 font-medium">Còn trống</div>
-                    <div className="text-2xl sm:text-3xl font-mono font-extrabold text-emerald-400 mt-0.5">
+                  <div className="text-center px-1 sm:px-2">
+                    <div className="text-[10px] sm:text-[11px] text-emerald-300 font-medium whitespace-nowrap">
+                      Còn trống
+                    </div>
+                    <div className="text-xl sm:text-3xl font-mono font-extrabold text-emerald-400 mt-0.5">
                       {campusTotals.totalAvailable}
                     </div>
-                    <div className="text-[10px] text-emerald-200">sẵn sàng đón SV</div>
+                    <div className="text-[10px] text-emerald-200 whitespace-nowrap">
+                      sẵn sàng đón SV
+                    </div>
                   </div>
                 </div>
               </div>
@@ -3162,7 +3454,7 @@ function UseatifyMainApp() {
 
             {/* 4 Real-World ULIS Homies Branch Cards */}
             <section className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-2.5">
                 <div>
                   <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 tracking-tight">
                     Tình trạng chỗ ngồi tại 4 cơ sở Homies – ULIS
@@ -3171,16 +3463,16 @@ function UseatifyMainApp() {
                     Số liệu được nhân viên trực tại từng cơ sở cập nhật trực tiếp và đồng bộ tức thời
                   </p>
                 </div>
-                <div className="flex flex-wrap items-center gap-2 text-xs font-bold">
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                <div className="flex flex-wrap items-center gap-1.5 sm:gap-2 text-[11px] sm:text-xs font-bold">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 whitespace-nowrap">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                     <span>≤60%: Còn nhiều chỗ</span>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 text-amber-700 border border-amber-200 whitespace-nowrap">
                     <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
                     <span>61–85%: Tương đối đông</span>
                   </span>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200">
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200 whitespace-nowrap">
                     <span className="w-2 h-2 rounded-full bg-rose-500 shrink-0" />
                     <span>&gt;85%: Gần kín / Hết chỗ</span>
                   </span>
@@ -3208,18 +3500,27 @@ function UseatifyMainApp() {
                           reviewCount={ratingObj.count}
                         />
 
-                        <div className="p-5 space-y-4">
-                          {/* Status Row */}
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800">
-                              <StatusIcon className={`w-4 h-4 ${status.textAccent}`} />
-                              <span className={status.textAccent}>{status.label}</span>
-                              <span className="text-slate-400">·</span>
-                              <span className="text-slate-600 font-medium">{status.subLabel}</span>
+                        <div className="p-4 sm:p-5 space-y-4">
+                          {/* Status Row (Never overlaps on mobile) */}
+                          <div className="space-y-1">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-800 min-w-0">
+                                <StatusIcon className={`w-4 h-4 shrink-0 ${status.textAccent}`} />
+                                <span className={`${status.textAccent} whitespace-nowrap`}>
+                                  {status.label}
+                                </span>
+                                <span className="hidden sm:inline text-slate-400">·</span>
+                                <span className="hidden sm:inline text-slate-600 font-medium truncate">
+                                  {status.subLabel}
+                                </span>
+                              </div>
+                              <span className="text-xs font-mono font-bold text-slate-700 whitespace-nowrap shrink-0">
+                                {status.occupancyRate}% lấp đầy
+                              </span>
                             </div>
-                            <span className="text-xs font-mono font-bold text-slate-700">
-                              {status.occupancyRate}% lấp đầy
-                            </span>
+                            <div className="sm:hidden text-[11px] text-slate-500 font-medium">
+                              {status.subLabel}
+                            </div>
                           </div>
 
                           {/* Occupancy Bar */}
@@ -3231,28 +3532,28 @@ function UseatifyMainApp() {
                           </div>
 
                           {/* 3-Column Seat Numbers */}
-                          <div className="grid grid-cols-3 gap-2.5 pt-1">
-                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/70 text-center">
-                              <div className="text-[11px] text-slate-500 font-medium">
+                          <div className="grid grid-cols-3 gap-2 sm:gap-2.5 pt-1">
+                            <div className="bg-slate-50 rounded-xl p-2.5 sm:p-3 border border-slate-200/70 text-center">
+                              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium whitespace-nowrap">
                                 Tổng số chỗ
                               </div>
-                              <div className="text-xl font-mono font-extrabold text-slate-900 mt-0.5">
+                              <div className="text-lg sm:text-xl font-mono font-extrabold text-slate-900 mt-0.5">
                                 {status.total}
                               </div>
                             </div>
-                            <div className="bg-slate-50 rounded-xl p-3 border border-slate-200/70 text-center">
-                              <div className="text-[11px] text-slate-500 font-medium">
+                            <div className="bg-slate-50 rounded-xl p-2.5 sm:p-3 border border-slate-200/70 text-center">
+                              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium whitespace-nowrap">
                                 Đang sử dụng
                               </div>
-                              <div className="text-xl font-mono font-extrabold text-slate-800 mt-0.5">
+                              <div className="text-lg sm:text-xl font-mono font-extrabold text-slate-800 mt-0.5">
                                 {status.used}
                               </div>
                             </div>
-                            <div className={`${status.softBg} rounded-xl p-3 border ${status.cardAccentBorder} text-center`}>
-                              <div className={`text-[11px] font-bold ${status.textAccent}`}>
+                            <div className={`${status.softBg} rounded-xl p-2.5 sm:p-3 border ${status.cardAccentBorder} text-center`}>
+                              <div className={`text-[10px] sm:text-[11px] font-bold whitespace-nowrap ${status.textAccent}`}>
                                 Chỗ còn trống
                               </div>
-                              <div className={`text-xl font-mono font-extrabold ${status.textAccent} mt-0.5`}>
+                              <div className={`text-lg sm:text-xl font-mono font-extrabold ${status.textAccent} mt-0.5`}>
                                 {status.available}
                               </div>
                             </div>
@@ -3278,16 +3579,16 @@ function UseatifyMainApp() {
                       </div>
 
                       {/* Card Footer Quick Actions */}
-                      <div className="px-5 py-3 bg-slate-50 border-t border-slate-200/70 flex items-center justify-between gap-2">
+                      <div className="px-4 sm:px-5 py-3 bg-slate-50 border-t border-slate-200/70 flex flex-wrap items-center justify-between gap-2">
                         <button
                           type="button"
                           onClick={() => {
                             setStuSelectedBranchForEntry(branch.id);
                             setActiveTab('student_pass');
                           }}
-                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#165b40] hover:text-emerald-800 cursor-pointer"
+                          className="inline-flex items-center gap-1.5 text-xs font-bold text-[#165b40] hover:text-emerald-800 cursor-pointer whitespace-nowrap"
                         >
-                          <Ticket className="w-3.5 h-3.5" />
+                          <Ticket className="w-3.5 h-3.5 shrink-0" />
                           <span>Xin mã số ra vào (2 tiếng)</span>
                         </button>
 
@@ -3299,9 +3600,9 @@ function UseatifyMainApp() {
                             const el = document.getElementById('community-section');
                             if (el) el.scrollIntoView({ behavior: 'smooth' });
                           }}
-                          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer"
+                          className="inline-flex items-center gap-1 text-xs font-semibold text-slate-600 hover:text-slate-900 cursor-pointer whitespace-nowrap"
                         >
-                          <Star className="w-3.5 h-3.5 text-amber-500" />
+                          <Star className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                           <span>Đánh giá &amp; Góp ý cơ sở</span>
                         </button>
                       </div>
@@ -3389,7 +3690,7 @@ function UseatifyMainApp() {
                   <button
                     type="button"
                     onClick={() => setGuestCommunityTab('reviews')}
-                    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                       guestCommunityTab === 'reviews'
                         ? 'bg-[#165b40] text-white shadow-xs'
                         : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
@@ -3401,7 +3702,7 @@ function UseatifyMainApp() {
                   <button
                     type="button"
                     onClick={() => setGuestCommunityTab('suggestions')}
-                    className={`inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
                       guestCommunityTab === 'suggestions'
                         ? 'bg-[#165b40] text-white shadow-xs'
                         : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
@@ -3590,12 +3891,12 @@ function UseatifyMainApp() {
                             key={rev.id}
                             className="p-4 sm:p-5 rounded-2xl bg-slate-50/90 border border-slate-200/80 space-y-2.5"
                           >
-                            <div className="flex items-center justify-between gap-2">
-                              <div>
+                            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 sm:gap-2">
+                              <div className="flex flex-wrap items-center gap-1.5">
                                 <span className="text-xs sm:text-sm font-bold text-slate-900">
                                   {rev.author}
                                 </span>
-                                <span className="mx-1.5 text-slate-400">·</span>
+                                <span className="text-slate-400">·</span>
                                 <span className="text-xs font-bold text-[#165b40]">
                                   {branchesMap[rev.branchId]?.name}
                                 </span>
@@ -3761,12 +4062,6 @@ function UseatifyMainApp() {
                 <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
                   Thẻ Sinh Viên Số ULIS &amp; Cấp Mã Số Ra Vào
                 </h1>
-                <p className="text-sm text-emerald-100/95 leading-relaxed">
-                  Dành cho sinh viên Trường Đại học Ngoại ngữ – ĐHQGHN (Email có 4 số đầu là{' '}
-                  <strong className="text-amber-300 font-mono">2X04</strong>, trong đó{' '}
-                  <strong className="text-white">X</strong> là số năm đăng ký, kèm đuôi{' '}
-                  <strong className="text-white font-mono">@vnu.edu.vn</strong>).
-                </p>
               </div>
 
               {currentStudent && (
@@ -3844,7 +4139,7 @@ function UseatifyMainApp() {
               </div>
             </div>
 
-            {/* IF STUDENT NOT LOGGED IN: SHOW LOGIN / REGISTER FORMS */}
+            {/* IF STUDENT NOT LOGGED IN: SHOW LOGIN / REGISTER / FORGOT PASSWORD FORMS */}
             {!currentStudent ? (
               <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-slate-200/90 shadow-xs overflow-hidden">
                 {/* Switch Login / Register */}
@@ -3852,32 +4147,32 @@ function UseatifyMainApp() {
                   <button
                     type="button"
                     onClick={() => setStudentAuthMode('login')}
-                    className={`py-3.5 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-colors ${
-                      studentAuthMode === 'login'
+                    className={`px-2 sm:px-4 py-3 sm:py-3.5 text-[11px] sm:text-sm font-extrabold flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-colors ${
+                      studentAuthMode === 'login' || studentAuthMode === 'forgot_password'
                         ? 'bg-white text-[#165b40] border-b-2 border-[#165b40]'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <LogIn className="w-4 h-4" />
+                    <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                     <span>Đăng nhập Thẻ Sinh Viên Số</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setStudentAuthMode('register')}
-                    className={`py-3.5 text-xs sm:text-sm font-extrabold flex items-center justify-center gap-2 cursor-pointer transition-colors ${
+                    className={`px-2 sm:px-4 py-3 sm:py-3.5 text-[11px] sm:text-sm font-extrabold flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-colors ${
                       studentAuthMode === 'register'
                         ? 'bg-white text-[#165b40] border-b-2 border-[#165b40]'
                         : 'text-slate-600 hover:text-slate-900'
                     }`}
                   >
-                    <UserPlus className="w-4 h-4" />
+                    <UserPlus className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />
                     <span>Đăng ký Thẻ Sinh Viên Số Mới</span>
                   </button>
                 </div>
 
-                {/* STUDENT LOGIN FORM */}
-                {studentAuthMode === 'login' ? (
-                  <form onSubmit={handleStudentLogin} className="p-6 sm:p-8 space-y-5 max-w-md mx-auto">
+                {/* 1. STUDENT LOGIN FORM */}
+                {studentAuthMode === 'login' && (
+                  <form onSubmit={handleStudentLogin} className="p-5 sm:p-8 space-y-5 max-w-md mx-auto">
                     <div className="text-center space-y-1">
                       <h2 className="text-lg font-extrabold text-slate-900">
                         Đăng nhập Tài khoản Sinh viên ULIS
@@ -3929,19 +4224,203 @@ function UseatifyMainApp() {
                       Mở Thẻ Sinh Viên Số
                     </button>
 
-                    <div className="text-center pt-2">
-                      <button
-                        type="button"
-                        onClick={() => setStudentAuthMode('register')}
-                        className="text-xs font-bold text-[#165b40] hover:underline cursor-pointer"
-                      >
-                        Chưa có Thẻ Sinh Viên Số? Đăng ký tài khoản mới tại quầy Homies →
-                      </button>
+                    <div className="text-center pt-2 space-y-2.5 border-t border-slate-100">
+                      <div>
+                        <button
+                          type="button"
+                          onClick={() => setStudentAuthMode('register')}
+                          className="text-xs font-bold text-[#165b40] hover:underline cursor-pointer"
+                        >
+                          Chưa có Thẻ Sinh Viên Số? Đăng ký tài khoản mới tại quầy Homies →
+                        </button>
+                      </div>
+
+                      {/* FORGOT PASSWORD LINK SWITCHES INLINE TO FORGOT PASSWORD VIEW */}
+                      <div>
+                        <button
+                          type="button"
+                          onClick={openForgotPasswordModal}
+                          className="inline-flex items-center justify-center gap-1.5 text-xs font-bold text-amber-700 hover:text-amber-800 hover:underline cursor-pointer"
+                        >
+                          <KeyRound className="w-3.5 h-3.5 shrink-0" />
+                          <span>Quên mật khẩu? Xin cấp lại mật khẩu →</span>
+                        </button>
+                      </div>
                     </div>
                   </form>
-                ) : (
-                  /* STUDENT REGISTRATION FORM: 2X04 EMAIL + SELECT CURRENT HOMIES + PORTRAIT PHOTO ONLY */
-                  <form onSubmit={handleRegisterStudentAccount} className="p-6 sm:p-8 space-y-6">
+                )}
+
+                {/* 2. INLINE FORGOT PASSWORD FLOW (REQUEST STAFF/ADMIN APPROVAL -> SMOOTH TRANSITION TO NEW PASSWORD) */}
+                {studentAuthMode === 'forgot_password' && (
+                  <div className="p-5 sm:p-8 max-w-md mx-auto space-y-5 transition-all duration-300">
+                    <div className="text-center space-y-1">
+                      <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-amber-50 border border-amber-200 text-amber-700 mb-1">
+                        <KeyRound className="w-5 h-5" />
+                      </div>
+                      <h2 className="text-lg font-extrabold text-slate-900">
+                        {forgotPassTargetStudent?.passwordResetStatus === 'approved'
+                          ? 'Thiết lập Mật khẩu mới'
+                          : 'Quên mật khẩu Thẻ Sinh Viên Số'}
+                      </h2>
+                    </div>
+
+                    {forgotPassTargetStudent?.passwordResetStatus === 'approved' ? (
+                      <form
+                        onSubmit={handleConfirmApprovedPasswordReset}
+                        className="space-y-4 transition-all duration-300"
+                      >
+                        <div className="p-3.5 rounded-xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900 space-y-1">
+                          <div className="font-extrabold flex items-center gap-1.5 text-[#165b40]">
+                            <CheckCircle2 className="w-4 h-4 shrink-0" />
+                            <span>Yêu cầu cấp lại mật khẩu đã được chấp thuận!</span>
+                          </div>
+                          <p className="leading-relaxed">
+                            Sinh viên: <strong>{forgotPassTargetStudent.fullName}</strong> (Mã SV:{' '}
+                            <span className="font-mono font-bold">
+                              {forgotPassTargetStudent.studentCode}
+                            </span>
+                            ). Vui lòng nhập mật khẩu mới bên dưới.
+                          </p>
+                        </div>
+
+                        {forgotPassNotice && (
+                          <div
+                            className={`p-3 rounded-xl text-xs font-semibold border ${
+                              forgotPassNotice.type === 'error'
+                                ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            }`}
+                          >
+                            {forgotPassNotice.text}
+                          </div>
+                        )}
+
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-700">
+                            Mật khẩu mới <span className="text-rose-600">*</span>
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            value={forgotPassNewPassword}
+                            onChange={(e) => setForgotPassNewPassword(e.target.value)}
+                            placeholder="Nhập mật khẩu mới (tối thiểu 6 ký tự)"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium"
+                          />
+                        </div>
+
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-700">
+                            Xác thực lại mật khẩu <span className="text-rose-600">*</span>
+                          </label>
+                          <input
+                            type="password"
+                            required
+                            value={forgotPassConfirmPassword}
+                            onChange={(e) => setForgotPassConfirmPassword(e.target.value)}
+                            placeholder="Nhập lại mật khẩu mới"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium"
+                          />
+                        </div>
+
+                        <button
+                          type="submit"
+                          className="w-full py-3 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-xs cursor-pointer"
+                        >
+                          Ghi nhận
+                        </button>
+
+                        <div className="text-center pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setStudentAuthMode('login')}
+                            className="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
+                          >
+                            ← Quay lại màn hình Đăng nhập
+                          </button>
+                        </div>
+                      </form>
+                    ) : (
+                      <form
+                        onSubmit={handleRequestPasswordReset}
+                        className="space-y-4 transition-all duration-300"
+                      >
+                        <div className="p-4 rounded-xl bg-amber-50 border border-amber-300 text-xs sm:text-sm font-semibold text-amber-950 leading-relaxed flex items-start gap-3">
+                          <Info className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+                          <p>
+                            Khi cần cấp lại mật khẩu, vui lòng mang thẻ sinh viên đến gặp nhân viên
+                            tại quầy để được hướng dẫn thêm
+                          </p>
+                        </div>
+
+                        {forgotPassNotice && (
+                          <div
+                            className={`p-3 rounded-xl text-xs font-semibold border ${
+                              forgotPassNotice.type === 'error'
+                                ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            }`}
+                          >
+                            {forgotPassNotice.text}
+                          </div>
+                        )}
+
+                        <div className="space-y-1.5">
+                          <label className="block text-xs font-bold text-slate-700">
+                            Email sinh viên (@vnu.edu.vn) hoặc Mã số sinh viên{' '}
+                            <span className="text-rose-600">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={forgotPassQuery}
+                            onChange={(e) => {
+                              setForgotPassQuery(e.target.value);
+                              try {
+                                localStorage.setItem('useatify_forgot_pass_query', e.target.value);
+                              } catch {}
+                            }}
+                            placeholder="Nhập email sinh viên hoặc mã số sinh viên"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium"
+                          />
+                        </div>
+
+                        {forgotPassTargetStudent?.passwordResetStatus === 'pending' && (
+                          <div className="p-3.5 rounded-xl bg-emerald-50/90 border border-emerald-300 text-xs text-emerald-900 flex items-center gap-2.5">
+                            <RefreshCw className="w-4 h-4 animate-spin text-[#165b40] shrink-0" />
+                            <span className="font-semibold leading-relaxed">
+                              Đã gửi yêu cầu cho SV{' '}
+                              <strong>{forgotPassTargetStudent.fullName}</strong> (
+                              {forgotPassTargetStudent.studentCode}). Đang chờ Nhân viên tại quầy
+                              hoặc Admin chấp thuận...
+                            </span>
+                          </div>
+                        )}
+
+                        <button
+                          type="submit"
+                          className="w-full py-3 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-xs cursor-pointer"
+                        >
+                          Xin cấp lại mật khẩu
+                        </button>
+
+                        <div className="text-center pt-2 border-t border-slate-100">
+                          <button
+                            type="button"
+                            onClick={() => setStudentAuthMode('login')}
+                            className="text-xs font-bold text-slate-600 hover:text-slate-900 hover:underline cursor-pointer"
+                          >
+                            ← Quay lại màn hình Đăng nhập
+                          </button>
+                        </div>
+                      </form>
+                    )}
+                  </div>
+                )}
+
+                {/* 3. STUDENT REGISTRATION FORM: CONFIRM PASSWORD + 4-DIGIT EMAIL OTP + HOMIES BRANCH + PORTRAIT */}
+                {studentAuthMode === 'register' && (
+                  <form onSubmit={handleRegisterStudentAccount} className="p-5 sm:p-8 space-y-6">
                     <div className="border-b border-slate-200 pb-4">
                       <h2 className="text-lg sm:text-xl font-extrabold text-slate-900">
                         Đăng ký Thẻ Sinh Viên Số ULIS – ĐHQGHN (Tại quầy ra vào Homies)
@@ -4028,12 +4507,46 @@ function UseatifyMainApp() {
                           className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs sm:text-sm font-medium"
                         />
                       </div>
+
+                      {/* CONFIRM PASSWORD */}
+                      <div className="space-y-1.5 sm:col-span-2">
+                        <label className="block text-xs font-bold text-slate-700">
+                          Xác nhận mật khẩu <span className="text-rose-600">*</span>
+                        </label>
+                        <input
+                          type="password"
+                          required
+                          value={stuRegConfirmPassword}
+                          onChange={(e) => setStuRegConfirmPassword(e.target.value)}
+                          placeholder="Nhập lại đúng mật khẩu vừa tạo"
+                          className={`w-full px-3.5 py-2.5 rounded-xl border text-xs sm:text-sm font-medium ${
+                            stuRegConfirmPassword && stuRegConfirmPassword !== stuRegPassword
+                              ? 'border-rose-400 bg-rose-50/40'
+                              : stuRegConfirmPassword && stuRegConfirmPassword === stuRegPassword
+                              ? 'border-emerald-500 bg-emerald-50/30'
+                              : 'border-slate-300'
+                          }`}
+                        />
+                        {stuRegConfirmPassword && (
+                          <div
+                            className={`text-[11px] font-semibold ${
+                              stuRegConfirmPassword === stuRegPassword
+                                ? 'text-emerald-700'
+                                : 'text-rose-600'
+                            }`}
+                          >
+                            {stuRegConfirmPassword === stuRegPassword
+                              ? '✓ Mật khẩu xác nhận đã khớp'
+                              : '✗ Mật khẩu xác nhận chưa khớp'}
+                          </div>
+                        )}
+                      </div>
                     </div>
 
                     {/* SELECT WHICH HOMIES BRANCH THE STUDENT IS CURRENTLY AT */}
                     <div className="space-y-2 pt-1">
                       <label className="block text-xs sm:text-sm font-extrabold text-slate-800">
-                        Bạn đang ở Homies nào? (Chọn cơ sở đang đứng để Staff tại quầy duyệt tài khoản){' '}
+                        Bạn đang ở Homies nào? (Chọn cơ sở đang đứng để nhân viên tại quầy duyệt tài khoản){' '}
                         <span className="text-rose-600">*</span>
                       </label>
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -4044,20 +4557,22 @@ function UseatifyMainApp() {
                               key={b.id}
                               type="button"
                               onClick={() => setStuRegBranchId(b.id)}
-                              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between ${
+                              className={`p-3.5 rounded-xl border text-left transition-all cursor-pointer flex items-center justify-between gap-2 ${
                                 isSelected
                                   ? 'bg-emerald-50 border-[#165b40] ring-2 ring-[#165b40]/20'
                                   : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                               }`}
                             >
-                              <div>
-                                <div className="text-xs sm:text-sm font-extrabold text-slate-900">
+                              <div className="min-w-0">
+                                <div className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
                                   {b.emoji} {b.name}
                                 </div>
-                                <div className="text-[11px] text-slate-500 mt-0.5">{b.address}</div>
+                                <div className="text-[11px] text-slate-500 mt-0.5 truncate">
+                                  {b.address}
+                                </div>
                               </div>
                               {isSelected && (
-                                <span className="px-2.5 py-1 rounded-full bg-[#165b40] text-white text-[10px] font-bold">
+                                <span className="px-2.5 py-1 rounded-full bg-[#165b40] text-white text-[10px] font-bold whitespace-nowrap shrink-0">
                                   Đang chọn ✓
                                 </span>
                               )}
@@ -4067,19 +4582,19 @@ function UseatifyMainApp() {
                       </div>
                     </div>
 
-                    {/* ONLY PORTRAIT PHOTO REQUIRED (NO STUDENT ID CARD PHOTO UPLOAD REQUIRED) */}
-                    <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
-                      <div className="flex items-center justify-between">
+                    {/* ONLY PORTRAIT PHOTO REQUIRED */}
+                    <div className="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                      <div className="flex flex-wrap items-center justify-between gap-1">
                         <span className="text-xs sm:text-sm font-extrabold text-slate-900">
-                          Ảnh thẻ chân dung sinh viên <span className="text-rose-600">*</span>
+                          Ảnh cá nhân sinh viên <span className="text-rose-600">*</span>
                         </span>
                         <span className="text-[11px] font-mono text-emerald-700 font-semibold">
-                          Chỉ cần ảnh thẻ chân dung • JPEG &lt; 60KB
+                          Chỉ cần ảnh cá nhân • JPEG &lt; 60KB
                         </span>
                       </div>
                       <p className="text-xs text-slate-600 leading-relaxed">
-                        Cung cấp ảnh thẻ chân dung rõ mặt để hiển thị trên Thẻ sinh viên số và để
-                        Staff tại quầy <strong>{branchesMap[stuRegBranchId]?.name}</strong> đối chiếu
+                        Cung cấp ảnh cá nhân rõ mặt để hiển thị trên Thẻ sinh viên số và để nhân
+                        viên tại quầy <strong>{branchesMap[stuRegBranchId]?.name}</strong> đối chiếu
                         với thẻ sinh viên gốc trong lần đăng ký đầu tiên.
                       </p>
 
@@ -4089,13 +4604,13 @@ function UseatifyMainApp() {
                           onClick={() => setLiveCameraTarget('portrait')}
                           className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer"
                         >
-                          <Camera className="w-4 h-4" />
-                          <span>Mở Camera chụp ảnh thẻ</span>
+                          <Camera className="w-4 h-4 shrink-0" />
+                          <span>Mở Camera chụp ảnh</span>
                         </button>
 
                         <label className="inline-flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-white border border-slate-300 hover:bg-slate-100 text-slate-800 text-xs font-bold cursor-pointer">
-                          <Upload className="w-4 h-4 text-emerald-700" />
-                          <span>Tải ảnh thẻ lên</span>
+                          <Upload className="w-4 h-4 text-emerald-700 shrink-0" />
+                          <span>Tải ảnh cá nhân lên</span>
                           <input
                             type="file"
                             accept="image/*"
@@ -4110,12 +4625,12 @@ function UseatifyMainApp() {
                           <img
                             src={stuRegPortraitPhoto}
                             alt="Chân dung sinh viên"
-                            className="w-28 h-36 object-cover rounded-xl border-2 border-[#165b40] shadow-xs"
+                            className="w-24 sm:w-28 h-32 sm:h-36 object-cover rounded-xl border-2 border-[#165b40] shadow-xs shrink-0"
                           />
                           <div className="text-xs text-emerald-800 font-semibold space-y-1">
                             <div className="flex items-center gap-1.5">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                              <span>Đã tải ảnh thẻ chân dung hợp lệ</span>
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>Đã tải ảnh cá nhân hợp lệ</span>
                             </div>
                             <p className="text-[11px] text-slate-500 font-normal">
                               Đã tự động tối ưu dung lượng chuẩn JPEG &lt; 60KB để đồng bộ tức thời.
@@ -4129,7 +4644,7 @@ function UseatifyMainApp() {
                       type="submit"
                       className="w-full py-3.5 px-5 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm cursor-pointer"
                     >
-                      Hoàn tất Đăng ký &amp; Gửi tới Staff {branchesMap[stuRegBranchId]?.name} phê duyệt
+                      Hoàn tất Đăng ký &amp; Gửi tới {branchesMap[stuRegBranchId]?.name} phê duyệt
                     </button>
                   </form>
                 )}
@@ -4138,7 +4653,7 @@ function UseatifyMainApp() {
               /* IF STUDENT IS LOGGED IN: SHOW PENDING STATUS OR APPROVED DIGITAL CARD + 2-HOUR PASS */
               <div className="space-y-8">
                 {currentStudent.status === 'pending' ? (
-                  <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-amber-300 p-6 sm:p-8 shadow-xs space-y-5">
+                  <div className="max-w-3xl mx-auto bg-white rounded-2xl border border-amber-300 p-5 sm:p-8 shadow-xs space-y-5">
                     <div className="flex items-start gap-3">
                       <Clock className="w-6 h-6 text-amber-600 shrink-0 mt-0.5" />
                       <div className="space-y-1">
@@ -4148,11 +4663,14 @@ function UseatifyMainApp() {
                         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                           Yêu cầu đăng ký của bạn đã được chuyển tới{' '}
                           <strong className="text-[#165b40]">
-                            Staff {branchesMap[currentStudent.registeredBranchId || 'homies_danang']?.name || currentStudent.registeredBranchName || 'Homies'}
-                          </strong>{' '}
-                          (cùng <strong className="text-slate-900">Tài khoản Tổng homies_admin</strong>
-                          ). Vui lòng xuất trình <strong>thẻ sinh viên gốc tại quầy ra vào Homies</strong>{' '}
-                          để nhân viên xác nhận kích hoạt lần đầu.
+                            {branchesMap[currentStudent.registeredBranchId || 'homies_danang']
+                              ?.name ||
+                              currentStudent.registeredBranchName ||
+                              'Homies'}
+                          </strong>
+                          . Vui lòng xuất trình{' '}
+                          <strong>thẻ sinh viên gốc tại quầy ra vào Homies</strong> để nhân viên xác
+                          nhận kích hoạt lần đầu.
                         </p>
                       </div>
                     </div>
@@ -4163,7 +4681,7 @@ function UseatifyMainApp() {
                         alt="Portrait"
                         className="w-28 h-36 object-cover rounded-xl border-2 border-[#165b40] shrink-0"
                       />
-                      <div className="space-y-1.5 text-xs sm:text-sm text-slate-700">
+                      <div className="space-y-1.5 text-xs sm:text-sm text-slate-700 w-full min-w-0">
                         <div>
                           Họ và tên:{' '}
                           <strong className="text-slate-900">{currentStudent.fullName}</strong>
@@ -4174,65 +4692,121 @@ function UseatifyMainApp() {
                             {currentStudent.studentCode}
                           </strong>
                         </div>
-                        <div>
+                        <div className="break-all">
                           Email sinh viên:{' '}
                           <strong className="font-mono text-slate-900">{currentStudent.email}</strong>
                         </div>
                         <div>
                           Cơ sở đăng ký phê duyệt:{' '}
                           <strong className="text-emerald-800">
-                            {branchesMap[currentStudent.registeredBranchId || 'homies_danang']?.name ||
+                            {branchesMap[currentStudent.registeredBranchId || 'homies_danang']
+                              ?.name ||
                               currentStudent.registeredBranchName ||
                               'HOMIES Đa năng'}
                           </strong>
                         </div>
                       </div>
                     </div>
+
+                    {/* INLINE CHANGE PASSWORD FORM FOR PENDING STUDENT (OLD, NEW, CONFIRM PASSWORD) */}
+                    <form
+                      onSubmit={handlePopupChangeStudentPassword}
+                      className="pt-4 border-t border-slate-200 space-y-3"
+                    >
+                      <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-slate-900">
+                        <KeyRound className="w-4 h-4 text-[#165b40] shrink-0" />
+                        <span>Đổi mật khẩu Thẻ Sinh Viên Số</span>
+                      </div>
+                      {changePassModalNotice && (
+                        <div
+                          className={`p-2.5 rounded-xl text-xs font-semibold border ${
+                            changePassModalNotice.type === 'error'
+                              ? 'bg-rose-50 text-rose-800 border-rose-200'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          }`}
+                        >
+                          {changePassModalNotice.text}
+                        </div>
+                      )}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
+                        <input
+                          type="password"
+                          required
+                          value={changePassOldInput}
+                          onChange={(e) => setChangePassOldInput(e.target.value)}
+                          placeholder="Mật khẩu cũ"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-white"
+                        />
+                        <input
+                          type="password"
+                          required
+                          value={changePassNewInput}
+                          onChange={(e) => setChangePassNewInput(e.target.value)}
+                          placeholder="Mật khẩu mới (≥ 6 ký tự)"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-white"
+                        />
+                        <input
+                          type="password"
+                          required
+                          value={changePassConfirmInput}
+                          onChange={(e) => setChangePassConfirmInput(e.target.value)}
+                          placeholder="Nhập lại mật khẩu"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-white"
+                        />
+                      </div>
+                      <button
+                        type="submit"
+                        className="px-4 py-2 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                      >
+                        Đổi mật khẩu
+                      </button>
+                    </form>
                   </div>
                 ) : (
                   /* APPROVED STUDENT VIEW: DIGITAL STUDENT CARD + TEMPORARY 6-DIGIT 2-HOUR PASS SERVICE */
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 lg:gap-8 items-start">
                     {/* LEFT COLUMN: DIGITAL HOMIES STUDENT CARD */}
                     <div className="lg:col-span-5 bg-white rounded-2xl border border-slate-200/90 shadow-sm overflow-hidden">
-                      <div className="bg-gradient-to-r from-[#165b40] to-[#1f7a56] p-5 text-white flex items-center justify-between">
-                        <div>
-                          <div className="text-[10px] font-bold tracking-widest text-emerald-200">
-                            ĐẠI HỌC QUỐC GIA HÀ NỘI – TRƯỜNG ĐH NGOẠI NGỮ
-                          </div>
-                          <h2 className="text-lg font-extrabold tracking-tight">
-                            THẺ SINH VIÊN SỐ ULIS
-                          </h2>
+                      {/* REDESIGNED CLEAN HEADER BAR FOR BOTH LAPTOP & PHONE (NO WRAPPED BADGE OR BROKEN WORDS) */}
+                      <div className="bg-gradient-to-r from-[#165b40] to-[#1f7a56] px-4 sm:px-5 py-4 text-white space-y-1.5">
+                        <div className="flex items-center justify-between gap-2">
+                          <span className="text-[10px] sm:text-[11px] font-bold tracking-wider text-emerald-200 uppercase truncate">
+                            ĐHQGHN – TRƯỜNG ĐH NGOẠI NGỮ
+                          </span>
+                          <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-950/55 border border-emerald-400/35 text-[11px] font-bold text-emerald-100 whitespace-nowrap shrink-0">
+                            ✓ Đã xác thực
+                          </span>
                         </div>
-                        <span className="px-2.5 py-1 rounded-md bg-emerald-950/50 border border-emerald-400/30 text-[11px] font-bold text-emerald-200">
-                          ✓ Đã xác thực
-                        </span>
+                        <h2 className="text-lg sm:text-xl font-extrabold tracking-tight leading-snug">
+                          THẺ SINH VIÊN SỐ ULIS
+                        </h2>
                       </div>
 
-                      <div className="p-6 space-y-5">
-                        <div className="flex items-start gap-4">
+                      <div className="p-5 sm:p-6 space-y-5">
+                        <div className="flex items-start gap-3.5 sm:gap-4">
                           <img
                             src={currentStudent.portraitPhoto}
                             alt={currentStudent.fullName}
                             onClick={() =>
                               setLightboxPhoto({
                                 src: currentStudent.portraitPhoto,
-                                caption: `Ảnh thẻ chân dung SV ${currentStudent.fullName}`
+                                caption: `Ảnh cá nhân SV ${currentStudent.fullName}`
                               })
                             }
-                            className="w-24 h-32 rounded-xl object-cover border-2 border-[#165b40] shadow-xs shrink-0 cursor-pointer"
+                            className="w-22 sm:w-24 h-30 sm:h-32 rounded-xl object-cover border-2 border-[#165b40] shadow-xs shrink-0 cursor-pointer"
                           />
-                          <div className="space-y-2 text-xs">
+                          <div className="space-y-2 text-xs min-w-0 flex-1">
                             <div>
                               <div className="text-[10px] text-slate-400 font-semibold">
                                 HỌ VÀ TÊN SINH VIÊN
                               </div>
-                              <div className="text-base font-extrabold text-slate-900">
+                              <div className="text-sm sm:text-base font-extrabold text-slate-900 break-words">
                                 {currentStudent.fullName}
                               </div>
                             </div>
                             <div>
                               <div className="text-[10px] text-slate-400 font-semibold">
-                                MÃ SỐ SINH VIÊN (MÃ SV)
+                                MÃ SỐ SINH VIÊN
                               </div>
                               <div className="text-sm font-mono font-bold text-[#165b40]">
                                 {currentStudent.studentCode}
@@ -4259,25 +4833,93 @@ function UseatifyMainApp() {
                             </div>
                           </div>
                         </div>
+
+                        {/* LAPTOP ONLY: COLLAPSIBLE "BẢO MẬT" SECTION PLACED RIGHT BELOW "CƠ SỞ ĐĂNG KÝ KÍCH HOẠT" */}
+                        <div className="hidden lg:block pt-4 border-t border-slate-200/90">
+                          <button
+                            type="button"
+                            onClick={() => setDesktopSecurityOpen((prev) => !prev)}
+                            className="inline-flex items-center gap-1.5 text-xs font-extrabold text-slate-800 hover:text-[#165b40] transition-colors cursor-pointer select-none"
+                          >
+                            <span>Bảo mật</span>
+                            <ChevronDown
+                              className={`w-4 h-4 text-slate-600 transition-transform duration-200 ${
+                                desktopSecurityOpen ? 'rotate-180 text-[#165b40]' : ''
+                              }`}
+                            />
+                          </button>
+
+                          {desktopSecurityOpen && (
+                            <form
+                              onSubmit={handlePopupChangeStudentPassword}
+                              className="mt-3 space-y-2.5"
+                            >
+                              {changePassModalNotice && (
+                                <div
+                                  className={`p-2.5 rounded-xl text-xs font-semibold border ${
+                                    changePassModalNotice.type === 'error'
+                                      ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                      : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                                  }`}
+                                >
+                                  {changePassModalNotice.text}
+                                </div>
+                              )}
+
+                              <div className="space-y-2">
+                                <input
+                                  type="password"
+                                  required
+                                  value={changePassOldInput}
+                                  onChange={(e) => setChangePassOldInput(e.target.value)}
+                                  placeholder="Mật khẩu cũ"
+                                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white"
+                                />
+                                <input
+                                  type="password"
+                                  required
+                                  value={changePassNewInput}
+                                  onChange={(e) => setChangePassNewInput(e.target.value)}
+                                  placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white"
+                                />
+                                <input
+                                  type="password"
+                                  required
+                                  value={changePassConfirmInput}
+                                  onChange={(e) => setChangePassConfirmInput(e.target.value)}
+                                  placeholder="Nhập lại mật khẩu"
+                                  className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white"
+                                />
+                                <button
+                                  type="submit"
+                                  className="w-full py-2.5 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold shadow-xs cursor-pointer transition-colors"
+                                >
+                                  Đổi mật khẩu
+                                </button>
+                              </div>
+                            </form>
+                          )}
+                        </div>
                       </div>
                     </div>
 
-                    {/* RIGHT COLUMN: REQUEST 2-HOUR ENTRY CODE */}
-                    <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6">
+                    {/* RIGHT COLUMN: REQUEST 2-HOUR ENTRY CODE (+ MOBILE CHANGE PASSWORD AT BOTTOM) */}
+                    <div className="lg:col-span-7 bg-white rounded-2xl border border-slate-200/90 p-5 sm:p-8 shadow-xs space-y-6">
                       <div className="space-y-1.5 border-b border-slate-200 pb-4">
                         <div className="inline-flex items-center gap-1.5 text-xs font-bold text-[#165b40]">
-                          <Ticket className="w-4 h-4" />
+                          <Ticket className="w-4 h-4 shrink-0" />
                           <span>CẤP MÃ SỐ RA VÀO TRỰC TIẾP TRÊN WEBSITE (HIỆU LỰC 2 TIẾNG)</span>
                         </div>
-                        <h3 className="text-xl font-extrabold text-slate-900">
+                        <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
                           Xin cấp mã số ra vào tại Cơ sở Homies
                         </h3>
                         <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                           Mỗi mã số 6 chữ số có hiệu lực trong <strong>2 tiếng (02:00:00)</strong>,
                           chỉ ra vào được <strong>1 cơ sở</strong> và chỉ xin cấp lại tại cơ sở đó sau{' '}
                           <strong>2 tiếng</strong>. Nếu đang trong 2 tiếng mà bạn xin cấp mã tại cơ sở
-                          khác, hệ thống sẽ gửi thông báo cho Staff đang phê duyệt về lần đầu mã số
-                          được cấp.
+                          khác, hệ thống sẽ gửi thông báo cho nhân viên đang phê duyệt về lần đầu mã
+                          số được cấp.
                         </p>
                       </div>
 
@@ -4300,11 +4942,11 @@ function UseatifyMainApp() {
                                     : 'bg-slate-50 border-slate-200 hover:bg-slate-100'
                                 }`}
                               >
-                                <div className="flex items-center justify-between">
-                                  <span className="text-xs sm:text-sm font-extrabold text-slate-900">
+                                <div className="flex items-center justify-between gap-2">
+                                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
                                     {b.emoji} {b.name}
                                   </span>
-                                  <span className="text-[11px] font-mono font-bold text-emerald-700">
+                                  <span className="text-[11px] font-mono font-bold text-emerald-700 whitespace-nowrap shrink-0">
                                     Trống {st.available}/{st.total}
                                   </span>
                                 </div>
@@ -4319,9 +4961,9 @@ function UseatifyMainApp() {
                         <button
                           type="button"
                           onClick={() => handleRequestTemporaryEntry(stuSelectedBranchForEntry)}
-                          className="w-full py-3.5 px-5 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm flex items-center justify-center gap-2 cursor-pointer mt-2"
+                          className="w-full py-3.5 px-4 sm:px-5 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs sm:text-sm font-extrabold shadow-sm flex items-center justify-center gap-2 cursor-pointer mt-2 text-center"
                         >
-                          <Ticket className="w-4 h-4" />
+                          <Ticket className="w-4 h-4 shrink-0" />
                           <span>
                             Yêu cầu xin cấp mã số ra vào (2 tiếng) tại{' '}
                             {branchesMap[stuSelectedBranchForEntry]?.name}
@@ -4348,13 +4990,13 @@ function UseatifyMainApp() {
                               return (
                                 <div
                                   key={req.id}
-                                  className={`p-5 rounded-2xl border ${
+                                  className={`p-4 sm:p-5 rounded-2xl border ${
                                     isApproved
                                       ? 'bg-slate-900 text-white border-emerald-500 shadow-lg'
                                       : 'bg-amber-50/80 border-amber-300 text-slate-900'
                                   }`}
                                 >
-                                  <div className="flex items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center justify-between gap-2">
                                     <div className="text-xs sm:text-sm font-bold">
                                       Cơ sở:{' '}
                                       <span className={isApproved ? 'text-emerald-400' : 'text-amber-900'}>
@@ -4374,7 +5016,7 @@ function UseatifyMainApp() {
                                           : 'bg-amber-100/90 border-amber-300 text-amber-900'
                                       }`}
                                     >
-                                      ⚠️ Đã đính kèm thông báo cho Staff: Bạn đã được cấp mã lần đầu tại{' '}
+                                      ⚠️ Đã đính kèm thông báo: Bạn đã được cấp mã lần đầu tại{' '}
                                       <strong>{req.priorActivePassWarning.firstBranchName}</strong> (Mã:{' '}
                                       <span className="font-mono font-bold">
                                         {req.priorActivePassWarning.firstCode}
@@ -4385,24 +5027,24 @@ function UseatifyMainApp() {
 
                                   {isApproved ? (
                                     <div className="mt-4 text-center space-y-2">
-                                      <div className="text-[11px] font-bold text-emerald-300 tracking-wider">
+                                      <div className="text-[10px] sm:text-[11px] font-bold text-emerald-300 tracking-wider">
                                         MÃ SỐ RA VÀO 6 CHỮ SỐ (HIỆU LỰC 2 TIẾNG TẠI 1 CƠ SỞ)
                                       </div>
-                                      <div className="text-4xl sm:text-5xl font-mono font-extrabold tracking-[0.28em] text-amber-300 bg-slate-950 py-4 px-6 rounded-xl border border-emerald-500/40 select-all">
+                                      <div className="text-3xl sm:text-5xl font-mono font-extrabold tracking-[0.2em] sm:tracking-[0.28em] text-amber-300 bg-slate-950 py-3.5 sm:py-4 px-3 sm:px-6 rounded-xl border border-emerald-500/40 select-all">
                                         {req.code}
                                       </div>
                                       <div className="flex items-center justify-center gap-2 text-xs font-mono font-bold text-rose-300 pt-1">
-                                        <Timer className="w-4 h-4 animate-spin" />
+                                        <Timer className="w-4 h-4 animate-spin shrink-0" />
                                         <span>
-                                          Hiệu lực còn lại (2 tiếng): {formatCountdownMMSS(exp, nowTick)}
+                                          Hiệu lực còn lại: {formatCountdownMMSS(exp, nowTick)}
                                         </span>
                                       </div>
                                     </div>
                                   ) : (
                                     <div className="mt-2 flex items-center gap-2 text-xs font-semibold text-amber-800">
-                                      <RefreshCw className="w-4 h-4 animate-spin text-amber-600" />
+                                      <RefreshCw className="w-4 h-4 animate-spin text-amber-600 shrink-0" />
                                       <span>
-                                        Đang chờ Staff {branchesMap[req.branchId]?.name} xác nhận &amp;
+                                        Đang chờ {branchesMap[req.branchId]?.name} xác nhận &amp;
                                         phát mã số (hiệu lực 2 tiếng)...
                                       </span>
                                     </div>
@@ -4413,6 +5055,62 @@ function UseatifyMainApp() {
                           </div>
                         )}
                       </div>
+
+                      {/* MOBILE ONLY: INLINE CHANGE PASSWORD PLACED BELOW ENTRY REQUEST STATUS & 6-DIGIT CODE SECTION */}
+                      <form
+                        onSubmit={handlePopupChangeStudentPassword}
+                        className="lg:hidden pt-5 border-t border-slate-200 space-y-3"
+                      >
+                        <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-slate-900">
+                          <KeyRound className="w-4 h-4 text-[#165b40] shrink-0" />
+                          <span>Đổi mật khẩu Thẻ Sinh Viên Số</span>
+                        </div>
+
+                        {changePassModalNotice && (
+                          <div
+                            className={`p-3 rounded-xl text-xs font-semibold border ${
+                              changePassModalNotice.type === 'error'
+                                ? 'bg-rose-50 text-rose-800 border-rose-200'
+                                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                            }`}
+                          >
+                            {changePassModalNotice.text}
+                          </div>
+                        )}
+
+                        <div className="space-y-2.5">
+                          <input
+                            type="password"
+                            required
+                            value={changePassOldInput}
+                            onChange={(e) => setChangePassOldInput(e.target.value)}
+                            placeholder="Mật khẩu cũ"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white"
+                          />
+                          <input
+                            type="password"
+                            required
+                            value={changePassNewInput}
+                            onChange={(e) => setChangePassNewInput(e.target.value)}
+                            placeholder="Mật khẩu mới (tối thiểu 6 ký tự)"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white"
+                          />
+                          <input
+                            type="password"
+                            required
+                            value={changePassConfirmInput}
+                            onChange={(e) => setChangePassConfirmInput(e.target.value)}
+                            placeholder="Nhập lại mật khẩu"
+                            className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white"
+                          />
+                          <button
+                            type="submit"
+                            className="w-full py-3 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold shadow-xs cursor-pointer"
+                          >
+                            Đổi mật khẩu
+                          </button>
+                        </div>
+                      </form>
                     </div>
                   </div>
                 )}
@@ -4539,11 +5237,13 @@ function UseatifyMainApp() {
                   >
                     {/* Sidebar Header with Pin / Auto-Collapse Toggle Button */}
                     <div className="px-3.5 py-3 border-b border-slate-100 flex items-center justify-between gap-2 bg-slate-50/70">
-                      {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                        <span className="text-[11px] font-extrabold text-slate-500 uppercase tracking-wider truncate">
-                          Danh mục Quản trị
-                        </span>
-                      )}
+                      <span
+                        className={`text-[11px] font-extrabold text-slate-500 uppercase tracking-wider truncate ${
+                          isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                        }`}
+                      >
+                        Danh mục Quản trị
+                      </span>
                       <button
                         type="button"
                         onClick={() => setIsStaffSidebarPinned((prev) => !prev)}
@@ -4552,7 +5252,7 @@ function UseatifyMainApp() {
                             ? 'Đang ghim thanh dọc (Bấm để tự động thu nhỏ khi không dùng)'
                             : 'Đang tự thu nhỏ (Bấm để ghim cố định thanh dọc)'
                         }
-                        className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
+                        className={`hidden lg:inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-bold transition-colors cursor-pointer ${
                           isStaffSidebarPinned
                             ? 'bg-emerald-50 text-[#165b40] border border-emerald-200'
                             : 'bg-slate-200/80 text-slate-700 hover:bg-slate-300/80 mx-auto'
@@ -4565,23 +5265,27 @@ function UseatifyMainApp() {
                       </button>
                     </div>
 
-                    {/* Vertical Navigation Items */}
-                    <nav className="p-2 space-y-1.5">
+                    {/* Vertical Navigation Items (2-col grid on mobile so labels never squish, vertical sidebar on laptop) */}
+                    <nav className="p-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-1.5">
                       <button
                         type="button"
                         onClick={() => setStaffSubTab('seats')}
                         title="Cập nhật chỗ ngồi (+1/-1) & Ảnh cơ sở"
-                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           staffSubTab === 'seats'
                             ? 'bg-[#165b40] text-white shadow-xs'
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <span className="text-base leading-none shrink-0">🪑</span>
-                          {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                            <span className="truncate">Đếm chỗ (+1/-1) &amp; Ảnh cơ sở</span>
-                          )}
+                          <span
+                            className={`truncate ${
+                              isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                            }`}
+                          >
+                            Đếm chỗ (+1/-1) &amp; Ảnh cơ sở
+                          </span>
                         </div>
                       </button>
 
@@ -4589,17 +5293,21 @@ function UseatifyMainApp() {
                         type="button"
                         onClick={() => setStaffSubTab('entry_codes')}
                         title="Cấp mã vào cửa tạm thời (6 số • Hiệu lực 2 tiếng)"
-                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           staffSubTab === 'entry_codes'
                             ? 'bg-[#165b40] text-white shadow-xs'
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <span className="text-base leading-none shrink-0">🎫</span>
-                          {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                            <span className="truncate">Cấp mã vào tạm thời</span>
-                          )}
+                          <span
+                            className={`truncate ${
+                              isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                            }`}
+                          >
+                            Cấp mã vào tạm thời
+                          </span>
                         </div>
                         {pendingEntryRequestsCountForRole > 0 && (
                           <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-rose-500 text-white shrink-0">
@@ -4613,21 +5321,25 @@ function UseatifyMainApp() {
                         type="button"
                         onClick={() => setStaffSubTab('student_approvals')}
                         title="Duyệt Tài khoản Thẻ Sinh viên số"
-                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           staffSubTab === 'student_approvals'
                             ? 'bg-[#165b40] text-white shadow-xs'
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <span className="text-base leading-none shrink-0">🪪</span>
-                          {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                            <span className="truncate">Duyệt Tài khoản Sinh viên</span>
-                          )}
+                          <span
+                            className={`truncate ${
+                              isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                            }`}
+                          >
+                            Duyệt Tài khoản Sinh viên
+                          </span>
                         </div>
-                        {pendingStudentAccountsCount > 0 && (
+                        {(pendingStudentAccountsCount + pendingPasswordResetStudents.length) > 0 && (
                           <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-amber-500 text-slate-950 shrink-0">
-                            {pendingStudentAccountsCount}
+                            {pendingStudentAccountsCount + pendingPasswordResetStudents.length}
                           </span>
                         )}
                       </button>
@@ -4636,17 +5348,21 @@ function UseatifyMainApp() {
                         type="button"
                         onClick={() => setStaffSubTab('moderation')}
                         title="Duyệt Đánh giá 5 sao"
-                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           staffSubTab === 'moderation'
                             ? 'bg-[#165b40] text-white shadow-xs'
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <span className="text-base leading-none shrink-0">⭐</span>
-                          {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                            <span className="truncate">Duyệt Đánh giá 5 sao</span>
-                          )}
+                          <span
+                            className={`truncate ${
+                              isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                            }`}
+                          >
+                            Duyệt Đánh giá 5 sao
+                          </span>
                         </div>
                         {pendingReviewsCountForCurrentRole > 0 && (
                           <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-amber-500 text-slate-950 shrink-0">
@@ -4659,17 +5375,21 @@ function UseatifyMainApp() {
                         type="button"
                         onClick={() => setStaffSubTab('suggestions')}
                         title="Hòm thư Góp ý nội bộ"
-                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           staffSubTab === 'suggestions'
                             ? 'bg-[#165b40] text-white shadow-xs'
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <span className="text-base leading-none shrink-0">📥</span>
-                          {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                            <span className="truncate">Hòm thư Góp ý</span>
-                          )}
+                          <span
+                            className={`truncate ${
+                              isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                            }`}
+                          >
+                            Hòm thư Góp ý
+                          </span>
                         </div>
                         {unreadSuggestionsCountForCurrentRole > 0 && (
                           <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-rose-500 text-white shrink-0">
@@ -4682,17 +5402,21 @@ function UseatifyMainApp() {
                         type="button"
                         onClick={() => setStaffSubTab('branding_contact')}
                         title="Thông tin Liên hệ"
-                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           staffSubTab === 'branding_contact'
                             ? 'bg-[#165b40] text-white shadow-xs'
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <span className="text-base leading-none shrink-0">📞</span>
-                          {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                            <span className="truncate">Thông tin Liên hệ</span>
-                          )}
+                          <span
+                            className={`truncate ${
+                              isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                            }`}
+                          >
+                            Thông tin Liên hệ
+                          </span>
                         </div>
                       </button>
 
@@ -4700,17 +5424,21 @@ function UseatifyMainApp() {
                         type="button"
                         onClick={() => setStaffSubTab('account')}
                         title="Đổi mật khẩu cá nhân"
-                        className={`w-full flex items-center justify-between px-3 py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2.5 sm:py-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                           staffSubTab === 'account'
                             ? 'bg-[#165b40] text-white shadow-xs'
                             : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <div className="flex items-center gap-3 min-w-0">
+                        <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                           <span className="text-base leading-none shrink-0">🔑</span>
-                          {(isStaffSidebarPinned || isStaffSidebarHovered) && (
-                            <span className="truncate">Đổi mật khẩu cá nhân</span>
-                          )}
+                          <span
+                            className={`truncate ${
+                              isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
+                            }`}
+                          >
+                            Đổi mật khẩu cá nhân
+                          </span>
                         </div>
                       </button>
                     </nav>
@@ -4729,25 +5457,25 @@ function UseatifyMainApp() {
                             return (
                               <div
                                 key={branch.id}
-                                className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-7 shadow-xs space-y-5"
+                                className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 md:p-7 shadow-xs space-y-5"
                               >
                                 {/* Card Header: Branch Name + Status Pill on Top Row, Aligned Single-Line Address & Updated Time Below */}
                                 <div className="space-y-2.5 pb-3.5 border-b border-slate-100">
-                                  <div className="flex items-center justify-between gap-3">
-                                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 flex items-center gap-2 tracking-tight min-w-0">
+                                  <div className="flex items-center justify-between gap-2 sm:gap-3">
+                                    <h3 className="text-base sm:text-xl font-extrabold text-slate-900 flex items-center gap-1.5 sm:gap-2 tracking-tight min-w-0">
                                       <span className="shrink-0">{branch.emoji}</span>
                                       <span className="truncate">{branch.name}</span>
                                     </h3>
 
                                     <span
-                                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border shrink-0 whitespace-nowrap ${st.softBg} ${st.textAccent} ${st.cardAccentBorder}`}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold border shrink-0 whitespace-nowrap ${st.softBg} ${st.textAccent} ${st.cardAccentBorder}`}
                                     >
                                       <span className={`w-2 h-2 rounded-full ${st.barColor}`} />
                                       <span>{st.label}</span>
                                     </span>
                                   </div>
 
-                                  <div className="flex items-center justify-between gap-2 flex-nowrap text-xs text-slate-600">
+                                  <div className="flex items-center justify-between gap-2 flex-nowrap text-[11px] sm:text-xs text-slate-600">
                                     <span
                                       className="inline-flex items-center gap-1 font-medium text-slate-600 tracking-tight min-w-0"
                                       title={branch.address}
@@ -4756,8 +5484,8 @@ function UseatifyMainApp() {
                                       <span className="truncate">{branch.address}</span>
                                     </span>
 
-                                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-xs font-medium whitespace-nowrap shrink-0">
-                                      <Clock className="w-3.5 h-3.5 text-slate-500 shrink-0" />
+                                    <span className="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1 rounded-lg bg-slate-100 text-slate-600 text-[11px] sm:text-xs font-medium whitespace-nowrap shrink-0">
+                                      <Clock className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-500 shrink-0" />
                                       <span>
                                         Cập nhật:{' '}
                                         <strong className="text-slate-800 font-mono font-bold">
@@ -4769,7 +5497,7 @@ function UseatifyMainApp() {
                                 </div>
 
                                 {/* Center Large Seat Display Box (Image 3 style) */}
-                                <div className="bg-slate-50/90 rounded-2xl py-6 px-4 text-center border border-slate-100 space-y-1.5">
+                                <div className="bg-slate-50/90 rounded-2xl py-5 sm:py-6 px-4 text-center border border-slate-100 space-y-1.5">
                                   <div className="flex items-baseline justify-center gap-1.5">
                                     <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
                                       {branch.used}
@@ -4803,12 +5531,12 @@ function UseatifyMainApp() {
                                 </div>
 
                                 {/* Side-by-Side Large -1 (Khách rời đi) and +1 (Khách mới đến) Buttons */}
-                                <div className="grid grid-cols-2 gap-4 pt-1">
+                                <div className="grid grid-cols-2 gap-3 sm:gap-4 pt-1">
                                   <button
                                     type="button"
                                     onClick={() => handleAdjustSeatCount(branch.id, -1)}
                                     disabled={branch.used <= 0}
-                                    className="py-5 px-4 rounded-2xl bg-[#f43f5e] hover:bg-rose-600 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-sm transition-all disabled:opacity-40 cursor-pointer"
+                                    className="py-4 sm:py-5 px-3 sm:px-4 rounded-2xl bg-[#f43f5e] hover:bg-rose-600 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-sm transition-all disabled:opacity-40 cursor-pointer"
                                   >
                                     <span className="text-2xl sm:text-3xl font-extrabold leading-none">
                                       −1
@@ -4822,7 +5550,7 @@ function UseatifyMainApp() {
                                     type="button"
                                     onClick={() => handleAdjustSeatCount(branch.id, 1)}
                                     disabled={branch.used >= branch.total}
-                                    className="py-5 px-4 rounded-2xl bg-[#059669] hover:bg-emerald-700 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-sm transition-all disabled:opacity-40 cursor-pointer"
+                                    className="py-4 sm:py-5 px-3 sm:px-4 rounded-2xl bg-[#059669] hover:bg-emerald-700 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-sm transition-all disabled:opacity-40 cursor-pointer"
                                   >
                                     <span className="text-2xl sm:text-3xl font-extrabold leading-none">
                                       +1
@@ -4835,12 +5563,12 @@ function UseatifyMainApp() {
 
                                 {/* Branch Cover Image Management (Lưu vĩnh viễn) */}
                                 <div className="space-y-3 pt-4 border-t border-slate-100">
-                                  <div className="flex items-center justify-between gap-2">
+                                  <div className="flex flex-wrap items-center justify-between gap-1.5">
                                     <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
-                                      <ImageIcon className="w-4 h-4 text-[#165b40]" />
+                                      <ImageIcon className="w-4 h-4 text-[#165b40] shrink-0" />
                                       <span>Ảnh mô tả {branch.name} (Lưu vĩnh viễn)</span>
                                     </div>
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-[#165b40]">
+                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-[#165b40] whitespace-nowrap shrink-0">
                                       ✓ Đã lưu vĩnh viễn
                                     </span>
                                   </div>
@@ -5074,6 +5802,84 @@ function UseatifyMainApp() {
                           </div>
                         </div>
 
+                        {/* NOTIFICATION BANNER FOR PASSWORD RESET REQUESTS FROM STUDENTS */}
+                        {pendingPasswordResetStudents.length > 0 && (
+                          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-400 space-y-3.5 shadow-xs">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-amber-950">
+                                <KeyRound className="w-4 h-4 text-amber-700 shrink-0" />
+                                <span>
+                                  🔔 Yêu cầu xin cấp lại mật khẩu Thẻ Sinh Viên Số (
+                                  {pendingPasswordResetStudents.length})
+                                </span>
+                              </div>
+                            </div>
+
+                            <div className="space-y-3">
+                              {pendingPasswordResetStudents.map((stu) => (
+                                <div
+                                  key={`pw_reset_${stu.id}`}
+                                  className="p-3.5 sm:p-4 rounded-xl bg-white border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                >
+                                  <div className="flex items-center gap-3 min-w-0">
+                                    {stu.portraitPhoto && (
+                                      <img
+                                        src={stu.portraitPhoto}
+                                        alt={stu.fullName}
+                                        onClick={() =>
+                                          setLightboxPhoto({
+                                            src: stu.portraitPhoto,
+                                            caption: `Ảnh thẻ chân dung SV ${stu.fullName} (${stu.studentCode})`
+                                          })
+                                        }
+                                        className="w-12 h-14 rounded-lg object-cover border border-amber-400 cursor-pointer shrink-0"
+                                      />
+                                    )}
+                                    <div className="space-y-0.5 text-xs min-w-0">
+                                      <div className="font-extrabold text-slate-900 text-sm truncate">
+                                        {stu.fullName}
+                                      </div>
+                                      <div className="font-mono font-bold text-[#165b40]">
+                                        MÃ SV: {stu.studentCode} • {stu.email}
+                                      </div>
+                                      <div className="text-[11px] text-slate-500">
+                                        Yêu cầu lúc: {stu.passwordResetRequestedAt || 'Vừa xong'} • Cơ sở:{' '}
+                                        <strong>
+                                          {branchesMap[stu.registeredBranchId || 'homies_danang']
+                                            ?.name ||
+                                            stu.registeredBranchName ||
+                                            'Homies'}
+                                        </strong>
+                                      </div>
+                                    </div>
+                                  </div>
+
+                                  <div className="flex flex-wrap items-center gap-2 shrink-0">
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleStaffApprovePasswordReset(stu.id, 'approve')
+                                      }
+                                      className="px-4 py-2 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                                    >
+                                      ✓ Chấp thuận cấp lại mật khẩu
+                                    </button>
+                                    <button
+                                      type="button"
+                                      onClick={() =>
+                                        handleStaffApprovePasswordReset(stu.id, 'reject')
+                                      }
+                                      className="px-3 py-2 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold cursor-pointer"
+                                    >
+                                      Từ chối
+                                    </button>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
                         {scopedStudentAccounts.length === 0 ? (
                           <div className="p-8 rounded-xl bg-slate-50 border border-slate-200/80 text-center text-xs text-slate-500">
                             {studentSearchCode.trim()
@@ -5084,13 +5890,14 @@ function UseatifyMainApp() {
                           <div className="space-y-3">
                             {scopedStudentAccounts.map((stu) => {
                               const isPending = stu.status === 'pending';
+                              const isPendingPwReset = stu.passwordResetStatus === 'pending';
                               const isExpanded = expandedStudentId === stu.id;
                               const regBranch = branchesMap[stu.registeredBranchId || 'homies_danang'];
                               return (
                                 <div
                                   key={stu.id}
                                   className={`rounded-2xl border transition-all overflow-hidden ${
-                                    isPending
+                                    isPending || isPendingPwReset
                                       ? 'bg-amber-50/40 border-amber-300'
                                       : 'bg-slate-50/80 border-slate-200'
                                   }`}
@@ -5119,6 +5926,11 @@ function UseatifyMainApp() {
                                       >
                                         {isPending ? 'Chờ duyệt' : 'Đã kích hoạt'}
                                       </span>
+                                      {isPendingPwReset && (
+                                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-rose-600 text-white">
+                                          🔑 Xin cấp lại mật khẩu
+                                        </span>
+                                      )}
                                     </div>
 
                                     <div className="flex items-center gap-2 text-xs font-bold text-slate-500 shrink-0">
@@ -5191,7 +6003,7 @@ function UseatifyMainApp() {
                                         </div>
                                       </div>
 
-                                      {/* Action Buttons: Approve & Permanent Database Delete */}
+                                      {/* Action Buttons: Approve Account, Approve Password Reset & Permanent Database Delete */}
                                       <div className="flex flex-wrap items-center gap-2.5 pt-1">
                                         {isPending && (
                                           <button
@@ -5202,6 +6014,17 @@ function UseatifyMainApp() {
                                             className="flex-1 py-2.5 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
                                           >
                                             ✓ Phê duyệt &amp; Kích hoạt Thẻ sinh viên số
+                                          </button>
+                                        )}
+                                        {isPendingPwReset && (
+                                          <button
+                                            type="button"
+                                            onClick={() =>
+                                              handleStaffApprovePasswordReset(stu.id, 'approve')
+                                            }
+                                            className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold cursor-pointer"
+                                          >
+                                            ✓ Chấp thuận cấp lại mật khẩu
                                           </button>
                                         )}
                                         <button
