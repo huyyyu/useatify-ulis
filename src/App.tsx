@@ -24,7 +24,6 @@ import {
   LogOut,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
   X,
   Check,
   Eye,
@@ -48,9 +47,9 @@ import {
   Ticket,
   Upload,
   SwitchCamera,
-  Mail,
   KeyRound,
-  Send
+  LayoutGrid,
+  Inbox
 } from 'lucide-react';
 
 declare global {
@@ -136,8 +135,6 @@ const INITIAL_BRANCHES = [
     used: 52,
     updatedAt: '09:30',
     updatedAtMs: 0,
-    emoji: '🏟️',
-    illustrationAccent: '#10b981',
     coverImg: null as string | null
   },
   {
@@ -151,8 +148,6 @@ const INITIAL_BRANCHES = [
     used: 28,
     updatedAt: '09:30',
     updatedAtMs: 0,
-    emoji: '📚',
-    illustrationAccent: '#f43f5e',
     coverImg: null as string | null
   },
   {
@@ -166,8 +161,6 @@ const INITIAL_BRANCHES = [
     used: 76,
     updatedAt: '09:30',
     updatedAtMs: 0,
-    emoji: '🌿',
-    illustrationAccent: '#f59e0b',
     coverImg: null as string | null
   },
   {
@@ -181,8 +174,6 @@ const INITIAL_BRANCHES = [
     used: 45,
     updatedAt: '09:30',
     updatedAtMs: 0,
-    emoji: '☕',
-    illustrationAccent: '#0ea5e9',
     coverImg: null as string | null
   }
 ];
@@ -655,97 +646,25 @@ function getSeatStatusInfo(used: number, total: number) {
 }
 
 // ============================================================================
-// 4. SUB-COMPONENTS (LOGO, BARCODE DISPLAY, LIVE CAMERA MODAL, BANNER & STAR RATING)
+// 4. SUB-COMPONENTS (LOGO, LIVE CAMERA MODAL, BANNER & STAR RATING)
 // ============================================================================
 function UseatifyBrandLogo({ className = 'h-12 sm:h-14 w-auto' }: { className?: string }) {
   return (
     <svg
-      viewBox="0 0 645 162"
-      fill="none"
+      viewBox="112 268 1330 384"
+      width="1330"
+      height="384"
       xmlns="http://www.w3.org/2000/svg"
-      className={`${className} select-none shrink-0`}
+      className={`${className} select-none shrink-0 block`}
       role="img"
       aria-label="USEATIFY"
     >
-      <path
-        d="M52 124 C30 130, 32 146, 68 146 C104 146, 144 135, 138 121 C135 115, 122 113, 112 114"
-        stroke="#6eb091"
-        strokeWidth="10.5"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M84 22 C52 22 30 46 30 75 C30 103 68 130 81 139 C83 140.5 85 140.5 87 139 C100 130 138 103 138 75 C138 46 116 22 84 22 Z"
-        fill="#165b40"
-      />
-      <path
-        d="M84 22 C116 22 138 46 138 75 C138 103 100 130 87 139 C85.5 140 84.5 140 84 139.8 L84 22 Z"
-        fill="#1f7a56"
-      />
-      <circle cx="84" cy="73" r="33" fill="#fbf8f3" />
-      <g transform="rotate(-7 84 74)">
-        <rect x="67" y="51" width="23" height="17" rx="4" fill="#165b40" />
-        <path
-          d="M71 66 L71 77 M86 66 L88 75"
-          stroke="#165b40"
-          strokeWidth="3.2"
-          strokeLinecap="round"
-        />
-        <path
-          d="M66 76 C66 73.5 69 72.5 73 72.5 L99 72.5 C102.5 72.5 104 74.5 103 77 C102 79 99 80 95 80 L69 80 C66.5 80 66 78 66 76 Z"
-          fill="#165b40"
-        />
-        <path
-          d="M70 79 L66 98 M83 79 L84 101 M98 78 L102 96"
-          stroke="#165b40"
-          strokeWidth="3.5"
-          strokeLinecap="round"
-        />
-      </g>
-      <path
-        d="M102 18 C102 12 103 7 104 4"
-        stroke="#e7ad45"
-        strokeWidth="6.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M114 24 C119 19 124 14 128 11"
-        stroke="#e7ad45"
-        strokeWidth="6.5"
-        strokeLinecap="round"
-      />
-      <g fill="#165b40">
-        <path d="M156 48 C156 43 160 39 165 39 C170 39 174 43 174 48 L174 82 C174 91 179 96 186 96 C193 96 198 91 198 82 L198 48 C198 43 202 39 207 39 C212 39 216 43 216 48 L216 83 C216 102 203 113 186 113 C169 113 156 102 156 83 Z" />
-        <path d="M268 52 C264 48 258 46 251 46 C244 46 240 49 240 53 C240 58 246 60 256 63 C269 67 278 73 278 86 C278 102 265 112 248 112 C235 112 225 107 221 101 C218 97 219 92 223 89 C227 86 232 87 236 91 C239 94 244 97 250 97 C256 97 260 93 260 88 C260 83 255 81 245 78 C231 74 223 68 223 55 C223 40 235 31 251 31 C262 31 271 35 275 41 C278 45 277 50 273 52 C271 53 269 53 268 52 Z" />
-        <path d="M288 46 C288 40 292 36 298 36 L329 36 C334 36 338 39 338 44 C338 48 334 52 329 52 L306 52 L306 65 L325 65 C330 65 333 68 333 73 C333 77 330 80 325 80 L306 80 L306 94 L330 94 C335 94 339 98 339 102 C339 107 335 110 330 110 L298 110 C292 110 288 106 288 100 Z" />
-        <path
-          fillRule="evenodd"
-          clipRule="evenodd"
-          d="M369 38 C372 32 377 29 383 29 C389 29 394 32 397 38 L420 95 C422 101 419 107 413 109 C408 111 402 108 400 102 L396 92 L370 92 L366 102 C364 108 358 111 353 109 C347 107 344 101 346 95 L369 38 Z M383 51 C383 61 379 65 369 65 C379 65 383 69 383 79 C383 69 387 65 397 65 C387 65 383 61 383 51 Z"
-        />
-        <path d="M418 44 C418 39 422 35 427 35 L467 35 C472 35 476 39 476 44 C476 49 472 53 467 53 L456 53 L456 101 C456 106 452 110 447 110 C442 110 438 106 438 101 L438 53 L427 53 C422 53 418 49 418 44 Z" />
-        <rect x="482" y="36" width="18" height="75" rx="9" />
-        <path d="M510 46 C510 40 514 36 520 36 L551 36 C556 36 560 40 560 44 C560 49 556 53 551 53 L528 53 L528 67 L546 67 C551 67 555 71 555 75 C555 80 551 83 546 83 L528 83 L528 102 C528 107 524 111 519 111 C514 111 510 107 510 102 Z" />
-        <path d="M562 49 C559 44 561 39 566 36 C571 34 576 36 579 41 L591 64 L605 42 C608 37 614 36 618 39 C623 42 624 47 621 52 L599 84 L597 104 C596 110 592 114 586 113 C581 113 577 108 578 102 L580 83 L562 49 Z" />
-      </g>
-      <path
-        d="M174 136 C255 106, 425 104, 560 124"
-        stroke="#6eb091"
-        strokeWidth="9"
-        strokeLinecap="round"
-        fill="none"
-      />
-      <path
-        d="M615 31 C616 25 618 21 620 18"
-        stroke="#e7ad45"
-        strokeWidth="5.5"
-        strokeLinecap="round"
-      />
-      <path
-        d="M625 38 C630 35 635 32 639 30"
-        stroke="#e7ad45"
-        strokeWidth="5.5"
-        strokeLinecap="round"
+      <image
+        href="/assets/aistudio/image_61b458a1.png"
+        x="0"
+        y="0"
+        width="1536"
+        height="1024"
       />
     </svg>
   );
@@ -926,76 +845,75 @@ function BranchVisualBanner({
   reviewCount: number;
 }) {
   return (
-    <div className="relative h-40 w-full overflow-hidden bg-slate-900 select-none">
+    <div className="relative h-36 sm:h-40 w-full overflow-hidden bg-[#144d36] select-none">
       {branch.coverImg ? (
         <img
           src={branch.coverImg}
           alt={branch.name}
           referrerPolicy="no-referrer"
-          className="absolute inset-0 w-full h-full object-cover opacity-90"
+          className="absolute inset-0 w-full h-full object-cover"
         />
       ) : (
-        <svg
-          className="absolute inset-0 w-full h-full opacity-35"
-          viewBox="0 0 400 160"
-          fill="none"
-          xmlns="http://www.w3.org/2000/svg"
-          preserveAspectRatio="xMidYMid slice"
+        <div
+          className="absolute inset-0 w-full h-full"
+          style={{
+            background:
+              'linear-gradient(135deg, #165b40 0%, #11422f 55%, #0f2922 100%)'
+          }}
         >
-          <defs>
-            <linearGradient id={`grad-${branch.id}`} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0%" stopColor={branch.illustrationAccent} stopOpacity="0.8" />
-              <stop offset="100%" stopColor="#0f172a" stopOpacity="0.95" />
-            </linearGradient>
-          </defs>
-          <rect width="400" height="160" fill={`url(#grad-${branch.id})`} />
-          <circle cx="340" cy="30" r="65" fill="white" fillOpacity="0.08" />
-          <circle cx="60" cy="140" r="80" fill="white" fillOpacity="0.05" />
-          <path
-            d="M20 120 H140 V145 H20 Z M160 105 H280 V145 H160 Z M300 90 H380 V145 H300 Z"
-            stroke="white"
-            strokeOpacity="0.18"
-            strokeWidth="2"
-          />
-        </svg>
+          <svg
+            className="absolute inset-0 w-full h-full opacity-15"
+            viewBox="0 0 400 160"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            preserveAspectRatio="none"
+          >
+            <path
+              d="M0 40H400M0 80H400M0 120H400M80 0V160M160 0V160M240 0V160M320 0V160"
+              stroke="white"
+              strokeWidth="1"
+            />
+          </svg>
+        </div>
       )}
+
+      <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/35 to-slate-950/20" />
 
       <div className="relative z-10 flex flex-wrap items-center justify-between gap-1.5 p-3 sm:p-3.5">
         <div className="flex flex-wrap items-center gap-1.5">
-          <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold bg-slate-900/80 text-white backdrop-blur-md border border-white/15 whitespace-nowrap">
-            <span>{branch.emoji}</span>
-            <span>Khu {branch.code}</span>
+          <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-black/45 text-white backdrop-blur-xs border border-white/15 whitespace-nowrap">
+            Khu {branch.code}
           </span>
           {reviewCount > 0 && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 sm:py-1 rounded-md text-[11px] sm:text-xs font-bold bg-amber-400/95 text-slate-950 shadow-xs whitespace-nowrap">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-bold bg-amber-400 text-slate-950 whitespace-nowrap">
               <Star className="w-3 h-3 fill-slate-950 shrink-0" />
               <span className="font-mono">{avgRating}</span>
-              <span className="text-[10px] font-semibold opacity-80">({reviewCount})</span>
+              <span className="text-[10px] font-medium opacity-80">({reviewCount})</span>
             </span>
           )}
         </div>
 
         {isBestChoice && (
-          <div className="inline-flex items-center gap-1 px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-md text-[10px] sm:text-[11px] font-extrabold bg-emerald-600 text-white shadow-md border border-white/30 whitespace-nowrap">
-            <Sparkles className="w-3 h-3 shrink-0" />
+          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-600/95 text-white border border-emerald-400/30 whitespace-nowrap">
+            <CheckCircle2 className="w-3 h-3 shrink-0" />
             <span>Nhiều chỗ trống nhất</span>
           </div>
         )}
       </div>
 
-      <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-slate-950/95 via-slate-950/70 to-transparent p-3 sm:p-3.5 pt-8 flex items-end justify-between gap-2">
+      <div className="absolute bottom-0 inset-x-0 p-3 sm:p-4 flex items-end justify-between gap-2">
         <div className="min-w-0 flex-1">
-          <h3 className="text-base sm:text-xl font-extrabold text-white tracking-tight flex flex-wrap items-center gap-1.5 sm:gap-2">
+          <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex flex-wrap items-center gap-2">
             <span className="truncate">{branch.name}</span>
-            <span className="text-[10px] sm:text-[11px] font-mono font-bold text-emerald-300 bg-white/15 px-2 py-0.5 rounded-md whitespace-nowrap shrink-0">
+            <span className="text-[11px] font-mono font-semibold text-emerald-200 bg-white/15 px-2 py-0.5 rounded whitespace-nowrap shrink-0">
               {branch.total} chỗ
             </span>
           </h3>
-          <p className="text-[11px] text-slate-300 line-clamp-1 mt-0.5">{branch.subtitle}</p>
+          <p className="text-[11px] text-slate-200/90 line-clamp-1 mt-0.5">{branch.subtitle}</p>
         </div>
 
-        <div className="flex items-center gap-1 text-[11px] font-mono font-medium text-slate-200 bg-black/45 backdrop-blur-sm px-2 py-1 rounded-md border border-white/10 shrink-0 whitespace-nowrap">
-          <Clock className="w-3 h-3 text-sky-400 shrink-0" />
+        <div className="flex items-center gap-1 text-[11px] font-mono text-slate-200 bg-black/40 px-2 py-0.5 rounded border border-white/10 shrink-0 whitespace-nowrap">
+          <Clock className="w-3 h-3 text-emerald-300 shrink-0" />
           <span>{branch.updatedAt}</span>
         </div>
       </div>
@@ -1617,12 +1535,12 @@ function UseatifyMainApp() {
           });
         }
 
-        // 2b. Merge SiteConfig (including emailScriptUrl for real student OTP emails)
+        // 2b. Merge SiteConfig
         if (cloud.siteConfig && typeof cloud.siteConfig === 'object') {
           setSiteConfig((prev: any) => {
             const pMs = prev?.updatedAtMs || 0;
             const cMs = cloud.siteConfig?.updatedAtMs || 0;
-            if (cMs > pMs || (cloud.siteConfig.emailScriptUrl && !prev?.emailScriptUrl)) {
+            if (cMs > pMs) {
               return { ...INITIAL_SITE_CONFIG, ...prev, ...cloud.siteConfig };
             }
             return prev;
@@ -2060,8 +1978,6 @@ function UseatifyMainApp() {
 
       setContactFormName(currentAccount.contactName || currentAccount.displayName || '');
       setContactFormPhone(currentAccount.contactPhone || '');
-      setContactFormName(currentAccount.contactName || currentAccount.displayName || '');
-      setContactFormPhone(currentAccount.contactPhone || '');
       setContactFormEmail(currentAccount.contactEmail || '');
       setContactFormNote(currentAccount.contactNote || '');
       setContactSaveNotice(null);
@@ -2184,7 +2100,6 @@ function UseatifyMainApp() {
       studentCode: cleanCode,
       registeredBranchId: stuRegBranchId,
       registeredBranchName: branchesMap[stuRegBranchId]?.name || 'HOMIES Đa năng',
-      barcodeValue: cleanCode,
       portraitPhoto: stuRegPortraitPhoto,
       status: 'pending',
       passwordResetStatus: 'none',
@@ -2525,10 +2440,7 @@ function UseatifyMainApp() {
       studentName: currentStudent.fullName,
       studentCode: currentStudent.studentCode,
       studentEmail: currentStudent.email,
-      barcodeValue: currentStudent.barcodeValue,
-      barcodeImage: currentStudent.barcodeImage || null,
       portraitPhoto: currentStudent.portraitPhoto,
-      idCardPhoto: currentStudent.idCardPhoto || null,
       branchId,
       status: 'pending',
       code: null,
@@ -3177,35 +3089,38 @@ function UseatifyMainApp() {
       )}
 
       {/* ====================================================================
-          LIGHTBOX MODAL FOR FULL-SIZE PHOTO
+          LIGHTBOX MODAL FOR FULL-SIZE PHOTO (STRICTLY CENTERED ON SCREEN)
       ==================================================================== */}
       {lightboxPhoto && (
         <div
           onClick={() => setLightboxPhoto(null)}
-          className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xs flex items-center justify-center p-4"
+          className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-3xl w-full bg-slate-900 rounded-2xl overflow-hidden border border-white/15 shadow-2xl"
+            className="relative max-w-2xl w-full bg-slate-900 rounded-2xl overflow-hidden border border-white/15 shadow-2xl flex flex-col"
           >
-            <div className="flex items-center justify-between px-5 py-3.5 border-b border-white/10 text-white">
-              <div className="text-sm font-bold flex items-center gap-2">
-                <Camera className="w-4 h-4 text-emerald-400" />
-                <span>{lightboxPhoto.caption}</span>
+            <div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-white/10 text-white">
+              <div className="text-xs sm:text-sm font-semibold flex items-center gap-2 min-w-0">
+                <Camera className="w-4 h-4 text-emerald-400 shrink-0" />
+                <span className="truncate">{lightboxPhoto.caption}</span>
               </div>
               <button
                 type="button"
                 onClick={() => setLightboxPhoto(null)}
-                className="p-1.5 rounded-xl bg-white/10 hover:bg-white/20 text-white cursor-pointer"
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white cursor-pointer shrink-0"
               >
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <img
-              src={lightboxPhoto.src}
-              alt={lightboxPhoto.caption}
-              referrerPolicy="no-referrer"
-            />
+            <div className="p-4 sm:p-6 bg-slate-950/90 flex items-center justify-center min-h-[260px] max-h-[80vh]">
+              <img
+                src={lightboxPhoto.src}
+                alt={lightboxPhoto.caption}
+                referrerPolicy="no-referrer"
+                className="block mx-auto max-h-[72vh] max-w-full w-auto h-auto object-contain rounded-lg shadow-md"
+              />
+            </div>
           </div>
         </div>
       )}
@@ -3216,13 +3131,13 @@ function UseatifyMainApp() {
       {toastMessage && (
         <div className="fixed top-20 right-3 left-3 sm:left-auto sm:right-5 z-50 sm:max-w-sm">
           <div
-            className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-xl border text-xs sm:text-sm font-semibold ${
+            className={`flex items-center gap-2.5 px-4 py-3 rounded-xl shadow-lg border text-xs sm:text-sm font-medium ${
               toastMessage.type === 'error'
-                ? 'bg-rose-950 text-rose-100 border-rose-700'
-                : 'bg-slate-900 text-white border-slate-700'
+                ? 'bg-rose-950 text-rose-100 border-rose-800'
+                : 'bg-slate-900 text-white border-slate-800'
             }`}
           >
-            <Sparkles className="w-4 h-4 text-emerald-400 shrink-0" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             <span className="leading-snug">{toastMessage.msg}</span>
           </div>
         </div>
@@ -3231,59 +3146,63 @@ function UseatifyMainApp() {
       {/* ====================================================================
           TOP HEADER: USEATIFY LOGO + SLOGAN BAR & TOP-RIGHT DROPDOWN SELECTOR
       ==================================================================== */}
-      <header className="sticky top-0 z-40 bg-[#fbf8f3]/95 backdrop-blur-md border-b border-slate-200/80 shadow-xs">
+      <header className="sticky top-0 z-40 bg-[#fbf6f0] border-b border-[#e8dfd1]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between py-2.5 sm:py-3 gap-2.5 md:gap-4">
-            {/* Brand Identity (Official Logo + Slogan - Never squished on mobile) */}
-            <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4 min-w-0">
+            {/* Brand Identity (Official Logo + Balanced Slogan on Mobile & Laptop) */}
+            <div className="flex flex-col sm:flex-row items-center sm:items-center gap-1.5 sm:gap-4 min-w-0">
               <div
                 onClick={() => {
                   setActiveTab('guest');
                   setNavDropdownOpen(false);
                 }}
-                className="flex items-center cursor-pointer shrink-0"
+                className="flex items-center justify-center cursor-pointer shrink-0"
                 title="USEATIFY – Find your space, embrace your pace"
               >
-                <UseatifyBrandLogo className="h-11 sm:h-14 w-auto" />
+                <UseatifyBrandLogo className="h-10 sm:h-12 w-auto" />
               </div>
 
-              <div className="flex items-center gap-2 sm:pl-1">
-                <span className="w-5 sm:w-8 lg:w-10 h-[1.5px] bg-amber-600/60 rounded-full shrink-0" />
-                <span className="text-amber-600 text-[10px] shrink-0">◆</span>
-                <span className="text-xs lg:text-sm font-serif italic font-semibold text-slate-700 tracking-wide truncate">
+              <div className="flex items-center justify-center gap-1.5 sm:gap-2.5 w-full sm:w-auto min-w-0">
+                <span className="w-4 sm:w-8 h-[2px] bg-[#e07b18]/85 rounded-full shrink-0" />
+                <span className="text-[#d96b0c] text-[9px] sm:text-[11px] leading-none select-none shrink-0">
+                  ◆
+                </span>
+                <span className="font-heading italic font-bold text-[12.5px] sm:text-[15px] lg:text-[16px] text-[#2b3748] tracking-tight whitespace-nowrap">
                   {siteConfig.slogan}
                 </span>
-                <span className="text-amber-600 text-[10px] shrink-0">◆</span>
-                <span className="w-5 sm:w-8 lg:w-10 h-[1.5px] bg-amber-600/60 rounded-full shrink-0" />
+                <span className="text-[#d96b0c] text-[9px] sm:text-[11px] leading-none select-none shrink-0">
+                  ◆
+                </span>
+                <span className="w-4 sm:w-8 h-[2px] bg-[#e07b18]/85 rounded-full shrink-0" />
               </div>
             </div>
 
-            {/* Category Button + Stylized Downward Arrow Dropdown (Below logo/slogan on mobile, right-aligned on desktop) */}
+            {/* Category Button + Downward Arrow Dropdown */}
             <div ref={navDropdownRef} className="relative w-full md:w-auto shrink-0">
               <button
                 type="button"
                 onClick={() => setNavDropdownOpen((prev) => !prev)}
-                className="w-full md:w-auto inline-flex items-center justify-between md:justify-center gap-2.5 px-4 py-2.5 rounded-2xl bg-[#165b40] hover:bg-[#124b35] text-white text-xs sm:text-sm font-bold shadow-sm border border-emerald-900/20 transition-all cursor-pointer"
+                className="w-full md:w-auto inline-flex items-center justify-between md:justify-center gap-2.5 px-4 py-2.5 rounded-xl bg-[#165b40] hover:bg-[#124b35] text-white text-xs sm:text-sm font-heading font-semibold shadow-xs transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-2.5 min-w-0">
+                <div className="flex items-center gap-2 min-w-0">
                   {activeTab === 'guest' && (
                     <>
                       <Eye className="w-4 h-4 text-emerald-200 shrink-0" />
-                      <span className="truncate">GUEST • Tra cứu chỗ ngồi</span>
+                      <span className="truncate font-heading">Tra cứu chỗ ngồi Homies</span>
                     </>
                   )}
                   {activeTab === 'student_pass' && (
                     <>
                       <IdCard className="w-4 h-4 text-amber-300 shrink-0" />
-                      <span className="truncate">STUDENT PASS • Thẻ sinh viên số</span>
+                      <span className="truncate font-heading">Thẻ Sinh Viên Số (Student Pass)</span>
                     </>
                   )}
                   {activeTab === 'staff' && (
                     <>
                       <ShieldCheck className="w-4 h-4 text-emerald-200 shrink-0" />
-                      <span className="truncate">STAFF • Quản trị hệ thống</span>
+                      <span className="truncate font-heading">Quản trị viên (Staff)</span>
                       {(pendingEntryRequestsCountForRole > 0 || pendingStudentAccountsCount > 0) && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-rose-500 text-white shrink-0">
+                        <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-rose-500 text-white shrink-0">
                           {pendingEntryRequestsCountForRole + pendingStudentAccountsCount}
                         </span>
                       )}
@@ -3291,44 +3210,31 @@ function UseatifyMainApp() {
                   )}
                 </div>
 
-                {/* Stylized Downward Arrow Icon */}
-                <span
-                  className={`ml-1 inline-flex items-center justify-center w-6 h-6 rounded-full bg-white/15 text-amber-200 transition-transform duration-200 shrink-0 ${
-                    navDropdownOpen ? 'rotate-180 bg-white/25' : ''
+                <ChevronDown
+                  className={`w-4 h-4 text-emerald-100 transition-transform duration-200 shrink-0 ${
+                    navDropdownOpen ? 'rotate-180' : ''
                   }`}
-                >
-                  <svg
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    className="w-3.5 h-3.5"
-                    stroke="currentColor"
-                    strokeWidth="2.2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M5.5 7.75L10 12.25L14.5 7.75" />
-                  </svg>
-                </span>
+                />
               </button>
 
-              {/* 3-Item Dropdown Menu (Auto-closes when selecting an item) */}
+              {/* 3-Item Dropdown Menu */}
               {navDropdownOpen && (
-                <div className="absolute left-0 right-0 md:left-auto md:right-0 mt-2 w-full md:w-88 bg-white rounded-2xl shadow-2xl border border-slate-200/90 p-2 z-50 space-y-1">
+                <div className="absolute left-0 right-0 md:left-auto md:right-0 mt-1.5 w-full md:w-80 bg-white rounded-xl shadow-xl border border-[#e8dfd1] p-1.5 z-50 space-y-1">
                   <button
                     type="button"
                     onClick={() => {
                       setActiveTab('guest');
                       setNavDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-left text-xs sm:text-sm font-heading font-semibold transition-colors cursor-pointer ${
                       activeTab === 'guest'
-                        ? 'bg-emerald-50 text-[#165b40] border border-emerald-200'
+                        ? 'bg-emerald-50 text-[#165b40]'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <Eye className="w-4 h-4 text-[#165b40] shrink-0" />
-                      <span>GUEST • Tra cứu chỗ ngồi</span>
+                      <span className="font-heading">Tra cứu chỗ ngồi Homies</span>
                     </div>
                     {activeTab === 'guest' && <Check className="w-4 h-4 text-[#165b40]" />}
                   </button>
@@ -3339,15 +3245,15 @@ function UseatifyMainApp() {
                       setActiveTab('student_pass');
                       setNavDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-left text-xs sm:text-sm font-heading font-semibold transition-colors cursor-pointer ${
                       activeTab === 'student_pass'
-                        ? 'bg-emerald-50 text-[#165b40] border border-emerald-200'
+                        ? 'bg-emerald-50 text-[#165b40]'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <IdCard className="w-4 h-4 text-[#165b40] shrink-0" />
-                      <span>STUDENT PASS • Thẻ sinh viên số</span>
+                      <span className="font-heading">Thẻ Sinh Viên Số (Student Pass)</span>
                     </div>
                     {activeTab === 'student_pass' && <Check className="w-4 h-4 text-[#165b40]" />}
                   </button>
@@ -3358,19 +3264,19 @@ function UseatifyMainApp() {
                       setActiveTab('staff');
                       setNavDropdownOpen(false);
                     }}
-                    className={`w-full flex items-center justify-between px-3.5 py-3 rounded-xl text-left text-xs sm:text-sm font-bold transition-colors cursor-pointer ${
+                    className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-lg text-left text-xs sm:text-sm font-heading font-semibold transition-colors cursor-pointer ${
                       activeTab === 'staff'
-                        ? 'bg-emerald-50 text-[#165b40] border border-emerald-200'
+                        ? 'bg-emerald-50 text-[#165b40]'
                         : 'text-slate-700 hover:bg-slate-50'
                     }`}
                   >
                     <div className="flex items-center gap-2.5">
                       <ShieldCheck className="w-4 h-4 text-[#165b40] shrink-0" />
-                      <span>STAFF • Quản trị hệ thống</span>
+                      <span className="font-heading">Quản trị viên (Staff)</span>
                     </div>
                     <div className="flex items-center gap-1.5">
                       {(pendingEntryRequestsCountForRole > 0 || pendingStudentAccountsCount > 0) && (
-                        <span className="px-1.5 py-0.5 text-[10px] font-mono font-extrabold rounded-full bg-rose-500 text-white">
+                        <span className="px-1.5 py-0.5 text-[10px] font-mono font-bold rounded-full bg-rose-500 text-white">
                           {pendingEntryRequestsCountForRole + pendingStudentAccountsCount}
                         </span>
                       )}
@@ -3392,60 +3298,64 @@ function UseatifyMainApp() {
             TAB 1: GUEST MODE (REAL-TIME SEAT LOOKUP, WHY CHOOSE, 5-STAR REVIEWS & SUGGESTION BOX)
         ================================================================== */}
         {activeTab === 'guest' && (
-          <div className="space-y-10">
+          <div className="space-y-8 sm:space-y-10">
             {/* Hero & Campus Summary Bar */}
-            <section className="bg-gradient-to-br from-[#165b40] via-[#134e37] to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-md border border-emerald-800/40">
-              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-                <div className="max-w-2xl space-y-2.5">
-                  <div className="text-xs font-semibold text-emerald-300 tracking-wide">
-                    TRƯỜNG ĐẠI HỌC NGOẠI NGỮ – ĐHQGHN (ULIS) · ĐỒNG BỘ LÚC {lastSyncedTime}
+            <section className="bg-[#165b40] rounded-2xl p-5 sm:p-7 text-white shadow-xs border border-emerald-900/20">
+              <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-5">
+                <div className="max-w-2xl space-y-2">
+                  <div className="text-xs font-medium text-emerald-200">
+                    Trường Đại học Ngoại ngữ – ĐHQGHN (ULIS) · Cập nhật lúc {lastSyncedTime}
                   </div>
-                  <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold tracking-tight leading-tight">
+                  <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight leading-snug">
                     Tra cứu chỗ ngồi Homies &amp; Thẻ Sinh Viên Số
                   </h1>
-                  <p className="text-sm sm:text-base text-emerald-100/90 leading-relaxed">
+                  <p className="text-xs sm:text-sm text-emerald-50/90 leading-relaxed">
                     Theo dõi số lượng chỗ trống theo thời gian thực tại 4 không gian tự học ULIS.
                     Cần đăng ký Thẻ sinh viên số hoặc xin cấp mã số ra vào? Truy cập ngay{' '}
                     <button
                       type="button"
                       onClick={() => setActiveTab('student_pass')}
-                      className="underline font-bold text-amber-300 hover:text-amber-200 cursor-pointer"
+                      className="underline font-semibold text-amber-300 hover:text-amber-200 cursor-pointer"
                     >
-                      STUDENT PASS - Thẻ sinh viên số
+                      Thẻ sinh viên số (Student Pass)
                     </button>
                     .
                   </p>
                 </div>
 
                 {/* Campus Total KPI Strip */}
-                <div className="grid grid-cols-3 gap-2 sm:gap-4 bg-slate-950/45 backdrop-blur-xs p-3 sm:p-4 rounded-xl border border-white/10 shrink-0">
-                  <div className="text-center px-1 sm:px-2">
-                    <div className="text-[10px] sm:text-[11px] text-emerald-200/80 font-medium whitespace-nowrap">
+                <div className="grid grid-cols-3 gap-1 sm:gap-3 bg-white/10 p-3 sm:p-4 rounded-xl border border-white/15 shrink-0">
+                  <div className="text-center px-2 sm:px-4 min-w-0">
+                    <div className="text-[11px] sm:text-xs text-emerald-100 font-semibold leading-snug">
                       Tổng sức chứa
                     </div>
-                    <div className="text-xl sm:text-3xl font-mono font-extrabold text-white mt-0.5">
+                    <div className="text-xl sm:text-2xl font-mono font-bold text-white mt-0.5">
                       {campusTotals.totalSeats}
                     </div>
-                    <div className="text-[10px] text-slate-300 whitespace-nowrap">4 cơ sở ULIS</div>
+                    <div className="text-[10px] sm:text-[11px] text-emerald-200/85 leading-snug mt-0.5">
+                      4 cơ sở ULIS
+                    </div>
                   </div>
-                  <div className="text-center px-1 sm:px-2 border-x border-white/10">
-                    <div className="text-[10px] sm:text-[11px] text-amber-200/80 font-medium whitespace-nowrap">
+                  <div className="text-center px-2 sm:px-4 border-x border-white/15 min-w-0">
+                    <div className="text-[11px] sm:text-xs text-amber-200 font-semibold leading-snug">
                       Đang sử dụng
                     </div>
-                    <div className="text-xl sm:text-3xl font-mono font-extrabold text-amber-300 mt-0.5">
+                    <div className="text-xl sm:text-2xl font-mono font-bold text-amber-300 mt-0.5">
                       {campusTotals.totalUsed}
                     </div>
-                    <div className="text-[10px] text-slate-300 whitespace-nowrap">chỗ đang ngồi</div>
+                    <div className="text-[10px] sm:text-[11px] text-emerald-200/85 leading-snug mt-0.5">
+                      chỗ đang ngồi
+                    </div>
                   </div>
-                  <div className="text-center px-1 sm:px-2">
-                    <div className="text-[10px] sm:text-[11px] text-emerald-300 font-medium whitespace-nowrap">
+                  <div className="text-center px-2 sm:px-4 min-w-0">
+                    <div className="text-[11px] sm:text-xs text-emerald-200 font-semibold leading-snug">
                       Còn trống
                     </div>
-                    <div className="text-xl sm:text-3xl font-mono font-extrabold text-emerald-400 mt-0.5">
+                    <div className="text-xl sm:text-2xl font-mono font-bold text-emerald-300 mt-0.5">
                       {campusTotals.totalAvailable}
                     </div>
-                    <div className="text-[10px] text-emerald-200 whitespace-nowrap">
-                      sẵn sàng đón SV
+                    <div className="text-[10px] sm:text-[11px] text-emerald-200/85 leading-snug mt-0.5">
+                      chỗ trống hiện tại
                     </div>
                   </div>
                 </div>
@@ -3532,25 +3442,25 @@ function UseatifyMainApp() {
                           </div>
 
                           {/* 3-Column Seat Numbers */}
-                          <div className="grid grid-cols-3 gap-2 sm:gap-2.5 pt-1">
-                            <div className="bg-slate-50 rounded-xl p-2.5 sm:p-3 border border-slate-200/70 text-center">
-                              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium whitespace-nowrap">
+                          <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-1">
+                            <div className="bg-slate-50 rounded-xl px-2 py-2.5 sm:p-3 border border-slate-200/70 text-center min-w-0">
+                              <div className="text-[11px] sm:text-xs text-slate-500 font-medium leading-snug">
                                 Tổng số chỗ
                               </div>
                               <div className="text-lg sm:text-xl font-mono font-extrabold text-slate-900 mt-0.5">
                                 {status.total}
                               </div>
                             </div>
-                            <div className="bg-slate-50 rounded-xl p-2.5 sm:p-3 border border-slate-200/70 text-center">
-                              <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium whitespace-nowrap">
+                            <div className="bg-slate-50 rounded-xl px-2 py-2.5 sm:p-3 border border-slate-200/70 text-center min-w-0">
+                              <div className="text-[11px] sm:text-xs text-slate-500 font-medium leading-snug">
                                 Đang sử dụng
                               </div>
                               <div className="text-lg sm:text-xl font-mono font-extrabold text-slate-800 mt-0.5">
                                 {status.used}
                               </div>
                             </div>
-                            <div className={`${status.softBg} rounded-xl p-2.5 sm:p-3 border ${status.cardAccentBorder} text-center`}>
-                              <div className={`text-[10px] sm:text-[11px] font-bold whitespace-nowrap ${status.textAccent}`}>
+                            <div className={`${status.softBg} rounded-xl px-2 py-2.5 sm:p-3 border ${status.cardAccentBorder} text-center min-w-0`}>
+                              <div className={`text-[11px] sm:text-xs font-bold leading-snug ${status.textAccent}`}>
                                 Chỗ còn trống
                               </div>
                               <div className={`text-lg sm:text-xl font-mono font-extrabold ${status.textAccent} mt-0.5`}>
@@ -3612,51 +3522,47 @@ function UseatifyMainApp() {
               </div>
             </section>
 
-            {/* WHY CHOOSE USEATIFY SECTION (MATCHING REFERENCE IMAGE DESIGN & TYPOGRAPHY) */}
-            <section className="space-y-6">
+            {/* WHY CHOOSE USEATIFY SECTION */}
+            <section className="space-y-5">
               <div className="max-w-2xl">
-                <div className="text-xs font-bold text-[#165b40] tracking-wider uppercase">
-                  TẠI SAO CẦN TRANG WEB NÀY?
+                <div className="text-xs font-semibold text-[#165b40]">
+                  Tiện ích hệ thống
                 </div>
-                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-1 tracking-tight">
-                  WHY CHOOSE USEATIFY?
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 mt-0.5 tracking-tight">
+                  Vì sao sinh viên ULIS sử dụng USEATIFY?
                 </h2>
-                <p className="text-sm sm:text-base text-slate-600 mt-1 leading-relaxed">
+                <p className="text-xs sm:text-sm text-slate-600 mt-1 leading-relaxed">
                   Giải pháp đồng bộ thời gian thực giúp sinh viên ULIS chủ động tra cứu chỗ ngồi,
                   sử dụng Thẻ sinh viên số và kết nối trực tiếp cùng hệ thống Homies.
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {WHY_CHOOSE_ITEMS.map((item, idx) => {
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                {WHY_CHOOSE_ITEMS.map((item) => {
                   const IconComp = item.icon;
                   return (
                     <div
                       key={item.num}
-                      className={`p-6 sm:p-8 rounded-3xl bg-white border transition-all shadow-xs hover:shadow-md flex flex-col justify-between ${
-                        idx === 0
-                          ? 'border-emerald-400/90 ring-1 ring-emerald-400/20'
-                          : 'border-slate-200/90 hover:border-emerald-300/80'
-                      }`}
+                      className="p-5 sm:p-6 rounded-2xl bg-white border border-slate-200 shadow-xs flex flex-col justify-between"
                     >
-                      <div className="space-y-4">
+                      <div className="space-y-3">
                         <div className="flex items-center justify-between">
-                          <div className="w-12 h-12 rounded-2xl bg-emerald-50/90 border border-emerald-200/80 flex items-center justify-center text-[#165b40]">
-                            <IconComp className="w-5 h-5 stroke-[2.2]" />
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-200/70 flex items-center justify-center text-[#165b40]">
+                            <IconComp className="w-5 h-5" />
                           </div>
-                          <span className="px-3.5 py-1 rounded-full bg-emerald-50 text-[#165b40] text-xs font-extrabold tracking-wide">
+                          <span className="font-mono text-xs font-bold text-slate-400">
                             {item.num}
                           </span>
                         </div>
 
-                        <div className="space-y-2.5 pt-1">
-                          <h3 className="text-lg sm:text-xl font-extrabold text-slate-950 tracking-tight">
+                        <div className="space-y-1.5">
+                          <h3 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
                             {item.title}
                           </h3>
-                          <p className="text-sm sm:text-[15px] font-semibold text-slate-800 leading-snug">
+                          <p className="text-xs sm:text-sm font-semibold text-slate-700 leading-snug">
                             {item.shortDesc}
                           </p>
-                          <p className="text-sm sm:text-[15px] text-slate-600 leading-relaxed">
+                          <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
                             {item.detailDesc}
                           </p>
                         </div>
@@ -3667,17 +3573,17 @@ function UseatifyMainApp() {
               </div>
             </section>
 
-            {/* RESTORED TO GUEST: 5-STAR REVIEWS (WITH PHOTO) & GÓP Ý HOMIES */}
+            {/* 5-STAR REVIEWS (WITH PHOTO) & GÓP Ý HOMIES */}
             <section
               id="community-section"
-              className="bg-white rounded-3xl border border-slate-200/90 p-6 sm:p-8 shadow-xs space-y-6"
+              className="bg-white rounded-2xl border border-slate-200 p-5 sm:p-7 shadow-xs space-y-6"
             >
-              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-5">
+              <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b border-slate-200 pb-4">
                 <div className="max-w-2xl space-y-1">
-                  <div className="text-xs font-bold text-[#165b40] uppercase tracking-wider">
-                    CỘNG ĐỒNG SINH VIÊN ULIS • ĐÁNH GIÁ &amp; GÓP Ý HOMIES
+                  <div className="text-xs font-semibold text-[#165b40]">
+                    Cộng đồng sinh viên ULIS
                   </div>
-                  <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900">
+                  <h2 className="text-lg sm:text-xl font-bold text-slate-900">
                     Đánh Giá 5 Sao &amp; Góp Ý Homies
                   </h2>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
@@ -3686,29 +3592,29 @@ function UseatifyMainApp() {
                   </p>
                 </div>
 
-                <div className="inline-grid grid-cols-2 sm:inline-flex items-center gap-1.5 bg-slate-100/90 p-1.5 rounded-2xl border border-slate-200/80 shrink-0 self-start lg:self-center w-full sm:w-auto">
+                <div className="flex flex-wrap sm:inline-flex items-center gap-1.5 bg-slate-100 p-1.5 rounded-xl border border-slate-200 shrink-0 self-start lg:self-center w-full sm:w-auto">
                   <button
                     type="button"
                     onClick={() => setGuestCommunityTab('reviews')}
-                    className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                       guestCommunityTab === 'reviews'
                         ? 'bg-[#165b40] text-white shadow-xs'
                         : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
                     }`}
                   >
-                    <span>⭐</span>
+                    <Star className="w-3.5 h-3.5 shrink-0" />
                     <span>Đánh giá 5 Sao ({approvedReviews.length})</span>
                   </button>
                   <button
                     type="button"
                     onClick={() => setGuestCommunityTab('suggestions')}
-                    className={`inline-flex items-center justify-center gap-1 sm:gap-1.5 px-2.5 sm:px-4 py-2.5 rounded-xl text-[11px] sm:text-sm font-bold transition-all whitespace-nowrap cursor-pointer ${
+                    className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
                       guestCommunityTab === 'suggestions'
                         ? 'bg-[#165b40] text-white shadow-xs'
                         : 'text-slate-700 hover:text-slate-950 hover:bg-white/60'
                     }`}
                   >
-                    <span>💡</span>
+                    <Lightbulb className="w-3.5 h-3.5 shrink-0" />
                     <span>Góp ý Homies</span>
                   </button>
                 </div>
@@ -4053,35 +3959,41 @@ function UseatifyMainApp() {
         {activeTab === 'student_pass' && (
           <div className="space-y-8">
             {/* Banner Header */}
-            <div className="bg-gradient-to-r from-[#165b40] via-[#1b6b4c] to-slate-900 rounded-2xl p-6 sm:p-8 text-white shadow-sm border border-emerald-800/40 flex flex-col md:flex-row md:items-center justify-between gap-4">
-              <div className="space-y-2 max-w-2xl">
-                <div className="inline-flex items-center gap-2 text-xs font-bold text-amber-300">
+            <div className="bg-[#165b40] rounded-2xl p-5 sm:p-7 text-white shadow-xs border border-emerald-900/20 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="space-y-1.5 max-w-2xl">
+                <div className="inline-flex items-center gap-1.5 text-xs font-medium text-emerald-200">
                   <IdCard className="w-4 h-4" />
-                  <span>STUDENT PASS • THẺ SINH VIÊN SỐ</span>
+                  <span>Thẻ sinh viên điện tử ULIS</span>
                 </div>
-                <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold tracking-tight">
                   Thẻ Sinh Viên Số ULIS &amp; Cấp Mã Số Ra Vào
                 </h1>
               </div>
 
               {currentStudent && (
-                <div className="flex flex-wrap items-center gap-2.5 bg-slate-950/40 px-4 py-3 rounded-xl border border-white/15 shrink-0">
+                <div className="flex flex-wrap items-center gap-2.5 bg-white/10 px-3.5 py-2.5 rounded-xl border border-white/15 shrink-0">
                   <img
                     src={currentStudent.portraitPhoto}
                     alt={currentStudent.fullName}
-                    className="w-11 h-11 rounded-lg object-cover border border-emerald-400/50"
+                    onClick={() =>
+                      setLightboxPhoto({
+                        src: currentStudent.portraitPhoto,
+                        caption: `Ảnh cá nhân SV ${currentStudent.fullName}`
+                      })
+                    }
+                    className="w-10 h-10 rounded-lg object-cover border border-white/30 cursor-pointer"
                   />
                   <div>
                     <div className="text-xs font-bold text-white">{currentStudent.fullName}</div>
-                    <div className="text-[11px] font-mono text-emerald-300">
-                      MÃ SV: {currentStudent.studentCode}
+                    <div className="text-[11px] font-mono text-emerald-200">
+                      Mã SV: {currentStudent.studentCode}
                     </div>
                   </div>
                   <div className="flex items-center gap-2 ml-1">
                     <button
                       type="button"
                       onClick={handleStudentExplicitLogout}
-                      className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-white text-xs font-bold border border-white/15 cursor-pointer"
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/15 hover:bg-white/25 text-white text-xs font-semibold cursor-pointer"
                       title="Đăng xuất tài khoản sinh viên"
                     >
                       <LogOut className="w-3.5 h-3.5" />
@@ -4092,7 +4004,7 @@ function UseatifyMainApp() {
                       <button
                         type="button"
                         onClick={() => setConfirmDeleteSelfStudent(true)}
-                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg bg-rose-600/90 hover:bg-rose-600 text-white text-xs font-bold cursor-pointer"
+                        className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 text-white text-xs font-semibold cursor-pointer"
                         title="Xóa tài khoản sinh viên khỏi cơ sở dữ liệu"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -4103,14 +4015,14 @@ function UseatifyMainApp() {
                         <button
                           type="button"
                           onClick={() => handleDeleteStudentAccountFromDatabase(currentStudent.id)}
-                          className="px-2.5 py-1.5 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-extrabold cursor-pointer"
+                          className="px-2.5 py-1 rounded-md bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-bold cursor-pointer"
                         >
                           Xác nhận xóa
                         </button>
                         <button
                           type="button"
                           onClick={() => setConfirmDeleteSelfStudent(false)}
-                          className="px-2 py-1.5 rounded-md bg-slate-800 text-slate-200 text-[11px] font-bold cursor-pointer"
+                          className="px-2 py-1 rounded-md bg-slate-800 text-slate-200 text-[11px] font-semibold cursor-pointer"
                         >
                           Hủy
                         </button>
@@ -4147,7 +4059,7 @@ function UseatifyMainApp() {
                   <button
                     type="button"
                     onClick={() => setStudentAuthMode('login')}
-                    className={`px-2 sm:px-4 py-3 sm:py-3.5 text-[11px] sm:text-sm font-extrabold flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-colors ${
+                    className={`px-2.5 sm:px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-bold leading-snug text-center flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-colors ${
                       studentAuthMode === 'login' || studentAuthMode === 'forgot_password'
                         ? 'bg-white text-[#165b40] border-b-2 border-[#165b40]'
                         : 'text-slate-600 hover:text-slate-900'
@@ -4159,7 +4071,7 @@ function UseatifyMainApp() {
                   <button
                     type="button"
                     onClick={() => setStudentAuthMode('register')}
-                    className={`px-2 sm:px-4 py-3 sm:py-3.5 text-[11px] sm:text-sm font-extrabold flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-colors ${
+                    className={`px-2.5 sm:px-4 py-3 sm:py-3.5 text-xs sm:text-sm font-bold leading-snug text-center flex items-center justify-center gap-1.5 sm:gap-2 cursor-pointer transition-colors ${
                       studentAuthMode === 'register'
                         ? 'bg-white text-[#165b40] border-b-2 border-[#165b40]'
                         : 'text-slate-600 hover:text-slate-900'
@@ -4564,8 +4476,8 @@ function UseatifyMainApp() {
                               }`}
                             >
                               <div className="min-w-0">
-                                <div className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-                                  {b.emoji} {b.name}
+                                <div className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                  {b.name}
                                 </div>
                                 <div className="text-[11px] text-slate-500 mt-0.5 truncate">
                                   {b.address}
@@ -4943,8 +4855,8 @@ function UseatifyMainApp() {
                                 }`}
                               >
                                 <div className="flex items-center justify-between gap-2">
-                                  <span className="text-xs sm:text-sm font-extrabold text-slate-900 truncate">
-                                    {b.emoji} {b.name}
+                                  <span className="text-xs sm:text-sm font-bold text-slate-900 truncate">
+                                    {b.name}
                                   </span>
                                   <span className="text-[11px] font-mono font-bold text-emerald-700 whitespace-nowrap shrink-0">
                                     Trống {st.available}/{st.total}
@@ -5278,7 +5190,7 @@ function UseatifyMainApp() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="text-base leading-none shrink-0">🪑</span>
+                          <LayoutGrid className="w-4 h-4 shrink-0" />
                           <span
                             className={`truncate ${
                               isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
@@ -5300,7 +5212,7 @@ function UseatifyMainApp() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="text-base leading-none shrink-0">🎫</span>
+                          <Ticket className="w-4 h-4 shrink-0" />
                           <span
                             className={`truncate ${
                               isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
@@ -5328,7 +5240,7 @@ function UseatifyMainApp() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="text-base leading-none shrink-0">🪪</span>
+                          <IdCard className="w-4 h-4 shrink-0" />
                           <span
                             className={`truncate ${
                               isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
@@ -5355,7 +5267,7 @@ function UseatifyMainApp() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="text-base leading-none shrink-0">⭐</span>
+                          <Star className="w-4 h-4 shrink-0" />
                           <span
                             className={`truncate ${
                               isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
@@ -5382,7 +5294,7 @@ function UseatifyMainApp() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="text-base leading-none shrink-0">📥</span>
+                          <Inbox className="w-4 h-4 shrink-0" />
                           <span
                             className={`truncate ${
                               isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
@@ -5409,7 +5321,7 @@ function UseatifyMainApp() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="text-base leading-none shrink-0">📞</span>
+                          <Phone className="w-4 h-4 shrink-0" />
                           <span
                             className={`truncate ${
                               isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
@@ -5431,7 +5343,7 @@ function UseatifyMainApp() {
                         }`}
                       >
                         <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
-                          <span className="text-base leading-none shrink-0">🔑</span>
+                          <KeyRound className="w-4 h-4 shrink-0" />
                           <span
                             className={`truncate ${
                               isStaffSidebarPinned || isStaffSidebarHovered ? '' : 'lg:hidden'
@@ -5446,7 +5358,7 @@ function UseatifyMainApp() {
 
                   {/* Right Main Content Area */}
                   <div className="flex-1 w-full min-w-0">
-                    {/* STAFF SUB-TAB 1: SEAT COUNTER (+1 / -1) & BRANCH COVER PHOTOS (MATCHING IMAGE 3) */}
+                    {/* STAFF SUB-TAB 1: SEAT COUNTER (+1 / -1) & BRANCH COVER PHOTOS */}
                     {staffSubTab === 'seats' && (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         {branchesList
@@ -5457,18 +5369,17 @@ function UseatifyMainApp() {
                             return (
                               <div
                                 key={branch.id}
-                                className="bg-white rounded-3xl border border-slate-200/90 p-4 sm:p-6 md:p-7 shadow-xs space-y-5"
+                                className="bg-white rounded-2xl border border-slate-200 p-4 sm:p-6 shadow-xs space-y-5"
                               >
-                                {/* Card Header: Branch Name + Status Pill on Top Row, Aligned Single-Line Address & Updated Time Below */}
+                                {/* Card Header */}
                                 <div className="space-y-2.5 pb-3.5 border-b border-slate-100">
                                   <div className="flex items-center justify-between gap-2 sm:gap-3">
-                                    <h3 className="text-base sm:text-xl font-extrabold text-slate-900 flex items-center gap-1.5 sm:gap-2 tracking-tight min-w-0">
-                                      <span className="shrink-0">{branch.emoji}</span>
+                                    <h3 className="text-base sm:text-lg font-bold text-slate-900 flex items-center gap-2 tracking-tight min-w-0">
                                       <span className="truncate">{branch.name}</span>
                                     </h3>
 
                                     <span
-                                      className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1 rounded-full text-[11px] sm:text-xs font-bold border shrink-0 whitespace-nowrap ${st.softBg} ${st.textAccent} ${st.cardAccentBorder}`}
+                                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] sm:text-xs font-bold border shrink-0 whitespace-nowrap ${st.softBg} ${st.textAccent} ${st.cardAccentBorder}`}
                                     >
                                       <span className={`w-2 h-2 rounded-full ${st.barColor}`} />
                                       <span>{st.label}</span>
@@ -5496,19 +5407,19 @@ function UseatifyMainApp() {
                                   </div>
                                 </div>
 
-                                {/* Center Large Seat Display Box (Image 3 style) */}
-                                <div className="bg-slate-50/90 rounded-2xl py-5 sm:py-6 px-4 text-center border border-slate-100 space-y-1.5">
-                                  <div className="flex items-baseline justify-center gap-1.5">
-                                    <span className="text-4xl sm:text-5xl font-extrabold text-slate-900 tracking-tight">
+                                {/* Center Large Seat Display Box */}
+                                <div className="bg-slate-50 rounded-xl py-5 px-4 text-center border border-slate-200/70 space-y-1">
+                                  <div className="flex items-baseline justify-center gap-1.5 font-mono">
+                                    <span className="text-4xl sm:text-5xl font-bold text-slate-900 tracking-tight">
                                       {branch.used}
                                     </span>
-                                    <span className="text-xl sm:text-2xl font-bold text-slate-400">
+                                    <span className="text-xl sm:text-2xl font-semibold text-slate-400">
                                       / {branch.total}
                                     </span>
                                   </div>
                                   <div className="text-xs sm:text-sm font-medium text-slate-600">
-                                    Đang sử dụng • Còn trống{' '}
-                                    <strong className={`font-extrabold ${st.textAccent}`}>
+                                    Đang sử dụng · Còn trống{' '}
+                                    <strong className={`font-bold ${st.textAccent}`}>
                                       {st.available} chỗ
                                     </strong>
                                   </div>
@@ -5536,9 +5447,9 @@ function UseatifyMainApp() {
                                     type="button"
                                     onClick={() => handleAdjustSeatCount(branch.id, -1)}
                                     disabled={branch.used <= 0}
-                                    className="py-4 sm:py-5 px-3 sm:px-4 rounded-2xl bg-[#f43f5e] hover:bg-rose-600 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-sm transition-all disabled:opacity-40 cursor-pointer"
+                                    className="py-4 px-3 sm:px-4 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-xs transition-all disabled:opacity-40 cursor-pointer"
                                   >
-                                    <span className="text-2xl sm:text-3xl font-extrabold leading-none">
+                                    <span className="text-2xl sm:text-3xl font-mono font-bold leading-none">
                                       −1
                                     </span>
                                     <span className="text-xs font-semibold text-rose-50 mt-1.5">
@@ -5550,9 +5461,9 @@ function UseatifyMainApp() {
                                     type="button"
                                     onClick={() => handleAdjustSeatCount(branch.id, 1)}
                                     disabled={branch.used >= branch.total}
-                                    className="py-4 sm:py-5 px-3 sm:px-4 rounded-2xl bg-[#059669] hover:bg-emerald-700 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-sm transition-all disabled:opacity-40 cursor-pointer"
+                                    className="py-4 px-3 sm:px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 active:scale-[0.99] text-white flex flex-col items-center justify-center shadow-xs transition-all disabled:opacity-40 cursor-pointer"
                                   >
-                                    <span className="text-2xl sm:text-3xl font-extrabold leading-none">
+                                    <span className="text-2xl sm:text-3xl font-mono font-bold leading-none">
                                       +1
                                     </span>
                                     <span className="text-xs font-semibold text-emerald-50 mt-1.5">
@@ -5564,12 +5475,12 @@ function UseatifyMainApp() {
                                 {/* Branch Cover Image Management (Lưu vĩnh viễn) */}
                                 <div className="space-y-3 pt-4 border-t border-slate-100">
                                   <div className="flex flex-wrap items-center justify-between gap-1.5">
-                                    <div className="flex items-center gap-1.5 text-xs font-extrabold text-slate-800">
+                                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
                                       <ImageIcon className="w-4 h-4 text-[#165b40] shrink-0" />
-                                      <span>Ảnh mô tả {branch.name} (Lưu vĩnh viễn)</span>
+                                      <span>Ảnh mô tả {branch.name}</span>
                                     </div>
-                                    <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-[11px] font-bold text-[#165b40] whitespace-nowrap shrink-0">
-                                      ✓ Đã lưu vĩnh viễn
+                                    <span className="text-[11px] font-semibold text-[#165b40]">
+                                      Đã đồng bộ
                                     </span>
                                   </div>
 
@@ -5583,7 +5494,7 @@ function UseatifyMainApp() {
                                           caption: `Ảnh mô tả ${branch.name}`
                                         })
                                       }
-                                      className="w-full h-44 object-cover rounded-2xl border border-slate-200 cursor-pointer hover:opacity-95"
+                                      className="w-full h-44 object-cover rounded-xl border border-slate-200 cursor-pointer hover:opacity-95"
                                     />
                                   )}
 
@@ -5639,8 +5550,8 @@ function UseatifyMainApp() {
                     {staffSubTab === 'entry_codes' && (
                       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
                         <div className="border-b border-slate-200 pb-4">
-                          <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                            🎫 Cấp mã số ra vào trực tiếp (6 chữ số • Hiệu lực 2 tiếng)
+                          <h3 className="text-lg sm:text-xl font-bold text-slate-900">
+                            Cấp mã số ra vào trực tiếp (6 chữ số · Hiệu lực 2 tiếng)
                           </h3>
                           <p className="text-xs text-slate-600 mt-1 leading-relaxed">
                             Khi bấm <strong>✓ Chấp nhận &amp; Phát mã 6 chữ số</strong>, hệ thống sinh
@@ -5683,21 +5594,8 @@ function UseatifyMainApp() {
                                         }
                                         className="w-14 h-16 rounded-xl object-cover border border-emerald-400 cursor-pointer shrink-0"
                                       />
-                                      {req.idCardPhoto && (
-                                        <img
-                                          src={req.idCardPhoto}
-                                          alt="Thẻ SV"
-                                          onClick={() =>
-                                            setLightboxPhoto({
-                                              src: req.idCardPhoto,
-                                              caption: `Ảnh Thẻ SV ${req.studentName}`
-                                            })
-                                          }
-                                          className="w-20 h-16 rounded-xl object-cover border border-slate-300 cursor-pointer shrink-0"
-                                        />
-                                      )}
                                       <div>
-                                        <div className="text-sm font-extrabold">
+                                        <div className="text-sm font-bold">
                                           {req.studentName}
                                         </div>
                                         <div className="text-xs font-mono font-bold text-emerald-500">
@@ -5722,14 +5620,15 @@ function UseatifyMainApp() {
                                   {/* CROSS-BRANCH ACTIVE 2-HOUR PASS WARNING FOR APPROVING STAFF */}
                                   {req.priorActivePassWarning && (
                                     <div className="p-3.5 rounded-xl bg-amber-100/95 border border-amber-400 text-amber-950 text-xs space-y-1">
-                                      <div className="font-extrabold flex items-center gap-1.5 text-amber-900">
-                                        <span>⚠️ CẢNH BÁO: ĐÃ ĐƯỢC CẤP MÃ TẠI CƠ SỞ KHÁC TRONG 2 TIẾNG QUA</span>
+                                      <div className="font-bold flex items-center gap-1.5 text-amber-900">
+                                        <AlertTriangle className="w-4 h-4 text-amber-700 shrink-0" />
+                                        <span>Cảnh báo: Đã được cấp mã tại cơ sở khác trong 2 tiếng qua</span>
                                       </div>
                                       <p className="leading-relaxed">
                                         Sinh viên này đã được cấp mã số lần đầu tại{' '}
                                         <strong>{req.priorActivePassWarning.firstBranchName}</strong>{' '}
                                         (Mã: <span className="font-mono font-bold">{req.priorActivePassWarning.firstCode}</span>)
-                                        lúc <strong>{req.priorActivePassWarning.firstIssuedAtText}</strong> và mã đó
+                                        lúc <strong>{req.priorActivePassWarning.firstApprovedAt || req.priorActivePassWarning.firstIssuedAtText}</strong> và mã đó
                                         hiện vẫn đang trong thời hạn 2 tiếng.
                                       </p>
                                     </div>
@@ -5770,8 +5669,8 @@ function UseatifyMainApp() {
                       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
                         <div className="border-b border-slate-200 pb-4 flex flex-col lg:flex-row lg:items-center justify-between gap-4">
                           <div className="space-y-1">
-                            <h3 className="text-lg sm:text-xl font-extrabold text-slate-900">
-                              🪪 Quản lý &amp; Duyệt Tài khoản Thẻ sinh viên số
+                            <h3 className="text-lg sm:text-xl font-bold text-slate-900">
+                              Quản lý &amp; Duyệt Tài khoản Thẻ sinh viên số
                             </h3>
                             <p className="text-xs text-slate-600 leading-relaxed">
                               Danh sách tự động sắp xếp theo ngày đăng ký ({scopedStudentAccounts.length} tài khoản
@@ -5804,12 +5703,12 @@ function UseatifyMainApp() {
 
                         {/* NOTIFICATION BANNER FOR PASSWORD RESET REQUESTS FROM STUDENTS */}
                         {pendingPasswordResetStudents.length > 0 && (
-                          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border-2 border-amber-400 space-y-3.5 shadow-xs">
+                          <div className="p-4 sm:p-5 rounded-2xl bg-amber-50 border border-amber-300 space-y-3.5 shadow-xs">
                             <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2 text-xs sm:text-sm font-extrabold text-amber-950">
+                              <div className="flex items-center gap-2 text-xs sm:text-sm font-bold text-amber-950">
                                 <KeyRound className="w-4 h-4 text-amber-700 shrink-0" />
                                 <span>
-                                  🔔 Yêu cầu xin cấp lại mật khẩu Thẻ Sinh Viên Số (
+                                  Yêu cầu xin cấp lại mật khẩu Thẻ Sinh Viên Số (
                                   {pendingPasswordResetStudents.length})
                                 </span>
                               </div>
@@ -5819,7 +5718,7 @@ function UseatifyMainApp() {
                               {pendingPasswordResetStudents.map((stu) => (
                                 <div
                                   key={`pw_reset_${stu.id}`}
-                                  className="p-3.5 sm:p-4 rounded-xl bg-white border border-amber-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                                  className="p-3.5 sm:p-4 rounded-xl bg-white border border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4"
                                 >
                                   <div className="flex items-center gap-3 min-w-0">
                                     {stu.portraitPhoto && (
@@ -5832,18 +5731,18 @@ function UseatifyMainApp() {
                                             caption: `Ảnh thẻ chân dung SV ${stu.fullName} (${stu.studentCode})`
                                           })
                                         }
-                                        className="w-12 h-14 rounded-lg object-cover border border-amber-400 cursor-pointer shrink-0"
+                                        className="w-12 h-14 rounded-lg object-cover border border-amber-300 cursor-pointer shrink-0"
                                       />
                                     )}
                                     <div className="space-y-0.5 text-xs min-w-0">
-                                      <div className="font-extrabold text-slate-900 text-sm truncate">
+                                      <div className="font-bold text-slate-900 text-sm truncate">
                                         {stu.fullName}
                                       </div>
                                       <div className="font-mono font-bold text-[#165b40]">
-                                        MÃ SV: {stu.studentCode} • {stu.email}
+                                        MÃ SV: {stu.studentCode} · {stu.email}
                                       </div>
                                       <div className="text-[11px] text-slate-500">
-                                        Yêu cầu lúc: {stu.passwordResetRequestedAt || 'Vừa xong'} • Cơ sở:{' '}
+                                        Yêu cầu lúc: {stu.passwordResetRequestedAt || 'Vừa xong'} · Cơ sở:{' '}
                                         <strong>
                                           {branchesMap[stu.registeredBranchId || 'homies_danang']
                                             ?.name ||
@@ -5860,7 +5759,7 @@ function UseatifyMainApp() {
                                       onClick={() =>
                                         handleStaffApprovePasswordReset(stu.id, 'approve')
                                       }
-                                      className="px-4 py-2 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                                      className="px-4 py-2 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer"
                                     >
                                       ✓ Chấp thuận cấp lại mật khẩu
                                     </button>
@@ -5911,7 +5810,7 @@ function UseatifyMainApp() {
                                     className="w-full px-5 py-4 flex items-center justify-between gap-3 text-left hover:bg-slate-100/70 transition-colors cursor-pointer"
                                   >
                                     <div className="flex flex-wrap items-center gap-3 min-w-0">
-                                      <span className="text-base font-extrabold text-slate-900">
+                                      <span className="text-base font-bold text-slate-900">
                                         {stu.fullName}
                                       </span>
                                       <span className="px-2.5 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-mono font-bold text-[#165b40]">
@@ -5927,13 +5826,13 @@ function UseatifyMainApp() {
                                         {isPending ? 'Chờ duyệt' : 'Đã kích hoạt'}
                                       </span>
                                       {isPendingPwReset && (
-                                        <span className="text-[11px] font-extrabold px-2 py-0.5 rounded bg-rose-600 text-white">
-                                          🔑 Xin cấp lại mật khẩu
+                                        <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-rose-600 text-white">
+                                          Xin cấp lại mật khẩu
                                         </span>
                                       )}
                                     </div>
 
-                                    <div className="flex items-center gap-2 text-xs font-bold text-slate-500 shrink-0">
+                                    <div className="flex items-center gap-2 text-xs font-semibold text-slate-500 shrink-0">
                                       <span className="hidden sm:inline">
                                         {isExpanded ? 'Thu gọn' : 'Xem chi tiết'}
                                       </span>
@@ -5950,18 +5849,18 @@ function UseatifyMainApp() {
                                     <div className="px-5 pb-5 pt-3 border-t border-slate-200/80 bg-white space-y-4">
                                       <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                         <div className="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200">
-                                          <div className="text-[11px] font-bold text-slate-500">
+                                          <div className="text-[11px] font-semibold text-slate-500">
                                             Đăng ký tại cơ sở ULIS:
                                           </div>
-                                          <div className="font-extrabold text-[#165b40] mt-0.5">
+                                          <div className="font-bold text-[#165b40] mt-0.5">
                                             {regBranch
-                                              ? `${regBranch.emoji} ${regBranch.name}`
+                                              ? regBranch.name
                                               : stu.registeredBranchName || 'HOMIES Đa năng'}
                                           </div>
                                         </div>
 
                                         <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                          <div className="text-[11px] font-bold text-slate-500">
+                                          <div className="text-[11px] font-semibold text-slate-500">
                                             Ngày đăng ký:
                                           </div>
                                           <div className="font-mono font-bold text-slate-900 mt-0.5">
@@ -5970,7 +5869,7 @@ function UseatifyMainApp() {
                                         </div>
 
                                         <div className="p-3 rounded-xl bg-slate-50 border border-slate-200">
-                                          <div className="text-[11px] font-bold text-slate-500">
+                                          <div className="text-[11px] font-semibold text-slate-500">
                                             Email sinh viên:
                                           </div>
                                           <div className="font-mono font-semibold text-slate-800 mt-0.5 break-all">
@@ -6011,7 +5910,7 @@ function UseatifyMainApp() {
                                             onClick={() =>
                                               handleMasterApproveStudentAccount(stu.id, 'approve')
                                             }
-                                            className="flex-1 py-2.5 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-extrabold cursor-pointer"
+                                            className="flex-1 py-2.5 px-4 rounded-xl bg-[#165b40] hover:bg-emerald-800 text-white text-xs font-bold cursor-pointer"
                                           >
                                             ✓ Phê duyệt &amp; Kích hoạt Thẻ sinh viên số
                                           </button>
@@ -6022,7 +5921,7 @@ function UseatifyMainApp() {
                                             onClick={() =>
                                               handleStaffApprovePasswordReset(stu.id, 'approve')
                                             }
-                                            className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold cursor-pointer"
+                                            className="flex-1 py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold cursor-pointer"
                                           >
                                             ✓ Chấp thuận cấp lại mật khẩu
                                           </button>
@@ -6032,7 +5931,7 @@ function UseatifyMainApp() {
                                           onClick={() =>
                                             handleMasterApproveStudentAccount(stu.id, 'delete')
                                           }
-                                          className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-extrabold cursor-pointer"
+                                          className="inline-flex items-center justify-center gap-1.5 py-2.5 px-4 rounded-xl bg-rose-100 hover:bg-rose-200 text-rose-800 text-xs font-bold cursor-pointer"
                                         >
                                           <Trash2 className="w-3.5 h-3.5" />
                                           <span>Xóa tài khoản khỏi CSDL</span>
@@ -6051,8 +5950,8 @@ function UseatifyMainApp() {
                     {/* STAFF SUB-TAB 4: 5-STAR REVIEW MODERATION */}
                     {staffSubTab === 'moderation' && (
                       <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-5">
-                        <h3 className="text-lg font-extrabold text-slate-900">
-                          ⭐ Kiểm duyệt Đánh giá 5 sao kèm ảnh thực tế ({scopedModerationReviews.length})
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Kiểm duyệt Đánh giá 5 sao kèm ảnh thực tế ({scopedModerationReviews.length})
                         </h3>
                         {scopedModerationReviews.length === 0 ? (
                           <div className="p-8 rounded-xl bg-slate-50 text-center text-xs text-slate-500">
@@ -6075,7 +5974,7 @@ function UseatifyMainApp() {
                                     </span>
                                     <StarRatingDisplay rating={rev.rating} size="w-3.5 h-3.5" />
                                     <span className="text-[11px] font-mono text-slate-500">
-                                      {rev.status === 'pending' ? '• Chờ duyệt' : '• Đã công khai'}
+                                      {rev.status === 'pending' ? '· Chờ duyệt' : '· Đã công khai'}
                                     </span>
                                   </div>
                                   <p className="text-xs text-slate-700">{rev.content}</p>
@@ -6125,8 +6024,8 @@ function UseatifyMainApp() {
                         {/* SECTION 1: GÓP Ý MỚI CHỜ DUYỆT */}
                         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
                           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-lg font-extrabold text-slate-900">
-                              📥 Góp ý Homies chờ duyệt (
+                            <h3 className="text-lg font-bold text-slate-900">
+                              Góp ý Homies chờ duyệt (
                               {
                                 scopedSuggestions.filter(
                                   (s) => !s.status || s.status === 'unread' || s.status === 'pending'
@@ -6208,8 +6107,8 @@ function UseatifyMainApp() {
                         {/* SECTION 2: GÓP Ý ĐƯỢC GHI NHẬN */}
                         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
                           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-lg font-extrabold text-[#165b40]">
-                              📌 Góp ý được ghi nhận (
+                            <h3 className="text-lg font-bold text-[#165b40]">
+                              Góp ý được ghi nhận (
                               {
                                 scopedSuggestions.filter(
                                   (s) => s.status === 'acknowledged' || s.status === 'resolved'
@@ -6286,8 +6185,8 @@ function UseatifyMainApp() {
                         {/* SECTION 3: ĐÃ THỰC HIỆN */}
                         <div className="bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4">
                           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                            <h3 className="text-lg font-extrabold text-slate-800">
-                              ✅ Đã thực hiện (
+                            <h3 className="text-lg font-bold text-slate-800">
+                              Đã thực hiện (
                               {scopedSuggestions.filter((s) => s.status === 'completed').length})
                             </h3>
                           </div>
@@ -6345,8 +6244,8 @@ function UseatifyMainApp() {
                         onSubmit={handleSaveStaffContactInfo}
                         className="max-w-xl bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4"
                       >
-                        <h3 className="text-lg font-extrabold text-slate-900">
-                          📞 Cập nhật Thông tin Liên hệ ({currentAccount.displayName})
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Cập nhật Thông tin Liên hệ ({currentAccount.displayName})
                         </h3>
                         {contactSaveNotice && (
                           <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
@@ -6410,8 +6309,8 @@ function UseatifyMainApp() {
                         onSubmit={handleSaveSelfAccount}
                         className="max-w-xl bg-white rounded-2xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-4"
                       >
-                        <h3 className="text-lg font-extrabold text-slate-900">
-                          🔑 Đổi mật khẩu &amp; Bảo mật tài khoản cá nhân
+                        <h3 className="text-lg font-bold text-slate-900">
+                          Đổi mật khẩu &amp; Bảo mật tài khoản cá nhân
                         </h3>
                         {accFeedback && (
                           <div
@@ -6500,14 +6399,14 @@ function UseatifyMainApp() {
       </main>
 
       {/* ====================================================================
-          FOOTER WITH OFFICIAL USEATIFY SVG LOGO & SLOGAN
+          FOOTER WITH OFFICIAL USEATIFY LOGO & SLOGAN
       ==================================================================== */}
-      <footer className="bg-[#fbf8f3] border-t border-slate-200/90 mt-12 py-8">
+      <footer className="bg-[#fbf6f0] border-t border-[#e8dfd1] mt-12 py-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <UseatifyBrandLogo className="h-10 w-auto" />
             <div className="text-xs text-slate-600">
-              <div className="font-serif italic font-semibold text-slate-800">
+              <div className="font-heading italic font-semibold text-slate-800">
                 {siteConfig.slogan}
               </div>
               <div>Hệ thống không gian học tập Homies – Trường Đại học Ngoại ngữ, ĐHQGHN (ULIS)</div>
